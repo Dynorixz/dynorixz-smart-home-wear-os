@@ -3,9 +3,16 @@
 package com.dynorixz.smarthome.ui
 
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -109,8 +117,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 private object Route {
@@ -164,7 +170,38 @@ fun DynorixzApp(
         }
     }
     DynorixzTheme(dynamicColor = settings.settings.dynamicColor, theme = settings.settings.theme) {
-        NavHost(navController = nav, startDestination = Route.HOME) {
+        NavHost(
+            navController = nav,
+            startDestination = Route.HOME,
+            enterTransition = {
+                fadeIn(tween(durationMillis = 180, delayMillis = 35)) +
+                    slideInHorizontally(
+                        animationSpec = tween(240, easing = FastOutSlowInEasing),
+                        initialOffsetX = { it / 6 },
+                    )
+            },
+            exitTransition = {
+                fadeOut(tween(110)) +
+                    slideOutHorizontally(
+                        animationSpec = tween(180, easing = FastOutSlowInEasing),
+                        targetOffsetX = { -it / 12 },
+                    )
+            },
+            popEnterTransition = {
+                fadeIn(tween(durationMillis = 180, delayMillis = 25)) +
+                    slideInHorizontally(
+                        animationSpec = tween(220, easing = FastOutSlowInEasing),
+                        initialOffsetX = { -it / 8 },
+                    )
+            },
+            popExitTransition = {
+                fadeOut(tween(110)) +
+                    slideOutHorizontally(
+                        animationSpec = tween(190, easing = FastOutSlowInEasing),
+                        targetOffsetX = { it / 7 },
+                    )
+            },
+        ) {
             composable(Route.HOME) { HomeScreen(nav, hiltViewModel()) }
             composable(Route.ROOMS) { RoomsScreen(nav, hiltViewModel()) }
             composable(Route.SCENARIOS) { ScenariosScreen(nav, hiltViewModel()) }
@@ -715,9 +752,24 @@ private fun DeviceButton(
     val density = LocalDensity.current
     val onOff = device.capabilities.filterIsInstance<Capability.OnOff>().firstOrNull()
     val canSwipe = onOff != null && device.reachable && quickActionsEnabled
-    val offset = remember(device.id) { Animatable(0f) }
+    var dragOffset by remember(device.id) { mutableFloatStateOf(0f) }
+    var isDragging by remember(device.id) { mutableStateOf(false) }
+    var swipeTurnsOn by remember(device.id) { mutableStateOf(!device.isOn()) }
     val swipeThreshold = with(density) { 44.dp.toPx() }
     val maxOffset = with(density) { 68.dp.toPx() }
+    val animatedOffset by animateFloatAsState(
+        targetValue = dragOffset,
+        animationSpec = if (isDragging) {
+            snap()
+        } else {
+            spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow,
+            )
+        },
+        label = "device swipe offset",
+    )
+    val swipeProgress = (abs(animatedOffset) / maxOffset).coerceIn(0f, 1f)
     val primaryContainer = MaterialTheme.colorScheme.primaryContainer
     val onPrimaryContainer = MaterialTheme.colorScheme.onPrimaryContainer
     val errorContainer = MaterialTheme.colorScheme.errorContainer
@@ -727,6 +779,10 @@ private fun DeviceButton(
         device.isOn() -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
     }
+    val actionContainer = if (swipeTurnsOn) primaryContainer else errorContainer
+    val actionContent = if (swipeTurnsOn) onPrimaryContainer else onErrorContainer
+    val actionAlignment = if (swipeTurnsOn) Alignment.CenterStart else Alignment.CenterEnd
+    val actionLabel = if (swipeTurnsOn) "Вкл" else "Выкл"
 
     Box(
         modifier = Modifier
@@ -734,62 +790,59 @@ private fun DeviceButton(
             .clip(CircleShape)
             .pointerInput(device.id, canSwipe, device.isOn()) {
                 if (!canSwipe) return@pointerInput
-                coroutineScope {
-                    var rawOffset = 0f
-                    var thresholdSignaled = false
-                    detectHorizontalDragGestures(
-                        onDragStart = {
-                            rawOffset = 0f
-                            thresholdSignaled = false
-                            launch {
-                                offset.stop()
-                                offset.snapTo(0f)
-                            }
-                        },
-                        onDragCancel = { launch { offset.animateTo(0f, spring()) } },
-                        onDragEnd = {
-                            val turnOn = rawOffset > swipeThreshold
-                            val turnOff = rawOffset < -swipeThreshold
-                            when {
-                                turnOn && !device.isOn() -> viewModel.executeDevice(
-                                    device.id,
-                                    CapabilityActionFactory.boolean(onOff, true),
-                                )
-                                turnOff && device.isOn() -> viewModel.executeDevice(
-                                    device.id,
-                                    CapabilityActionFactory.boolean(onOff, false),
-                                )
-                            }
-                            launch { offset.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 620f)) }
-                        },
-                    ) { change, dragAmount ->
-                        change.consume()
-                        rawOffset = (rawOffset + dragAmount).coerceIn(-maxOffset, maxOffset)
-                        if (abs(rawOffset) >= swipeThreshold && !thresholdSignaled) {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            thresholdSignaled = true
-                        } else if (abs(rawOffset) < swipeThreshold * 0.7f) {
-                            thresholdSignaled = false
+                var thresholdSignaled = false
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        swipeTurnsOn = !device.isOn()
+                        dragOffset = 0f
+                        isDragging = true
+                        thresholdSignaled = false
+                    },
+                    onDragCancel = {
+                        isDragging = false
+                        dragOffset = 0f
+                    },
+                    onDragEnd = {
+                        val commit = abs(dragOffset) >= swipeThreshold
+                        if (commit) {
+                            viewModel.executeDevice(
+                                device.id,
+                                CapabilityActionFactory.boolean(onOff, swipeTurnsOn),
+                            )
                         }
-                        launch { offset.snapTo(rawOffset) }
+                        isDragging = false
+                        dragOffset = 0f
+                    },
+                ) { change, dragAmount ->
+                    change.consume()
+                    val minimum = if (swipeTurnsOn) 0f else -maxOffset
+                    val maximum = if (swipeTurnsOn) maxOffset else 0f
+                    dragOffset = (dragOffset + dragAmount).coerceIn(minimum, maximum)
+                    if (abs(dragOffset) >= swipeThreshold && !thresholdSignaled) {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        thresholdSignaled = true
+                    } else if (abs(dragOffset) < swipeThreshold * 0.72f) {
+                        thresholdSignaled = false
                     }
                 }
             },
     ) {
         if (canSwipe) {
-            Row(Modifier.matchParentSize()) {
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxSize().background(primaryContainer),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    Text("Вкл", color = onPrimaryContainer, modifier = Modifier.padding(start = 14.dp))
-                }
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxSize().background(errorContainer),
-                    contentAlignment = Alignment.CenterEnd,
-                ) {
-                    Text("Выкл", color = onErrorContainer, modifier = Modifier.padding(end = 14.dp))
-                }
+            Box(
+                modifier = Modifier.matchParentSize().background(actionContainer),
+                contentAlignment = actionAlignment,
+            ) {
+                Text(
+                    actionLabel,
+                    color = actionContent,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .graphicsLayer {
+                            alpha = swipeProgress
+                            scaleX = 0.9f + 0.1f * swipeProgress
+                            scaleY = 0.9f + 0.1f * swipeProgress
+                        },
+                )
             }
         }
         Button(
@@ -798,7 +851,7 @@ private fun DeviceButton(
             onLongClickLabel = if (isFavorite) "Убрать из избранного" else "Добавить в избранное",
             modifier = Modifier
                 .fillMaxWidth()
-                .graphicsLayer { translationX = offset.value },
+                .graphicsLayer { translationX = animatedOffset },
             label = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(7.dp).background(indicatorColor, CircleShape))

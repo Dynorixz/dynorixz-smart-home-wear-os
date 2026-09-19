@@ -1,5 +1,14 @@
 package com.dynorixz.smarthome.ui.device
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -201,22 +210,36 @@ internal fun LightDeviceScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
-                when (selected) {
-                    LightControl.BRIGHTNESS -> BrightnessControl(
-                        value = brightnessValue,
-                        range = brightness?.range,
-                        onChange = ::setBrightness,
-                    )
-                    LightControl.TEMPERATURE -> TemperatureControl(
-                        value = temperatureValue,
-                        range = temperatureRange,
-                        onChange = ::setTemperature,
-                    )
-                    LightControl.COLOR -> AdvancedColorControl(
-                        hue = hueValue,
-                        saturation = saturationValue,
-                        onChange = ::setColor,
-                    )
+                AnimatedContent(
+                    targetState = selected,
+                    transitionSpec = {
+                        (fadeIn(tween(180, delayMillis = 35)) +
+                            scaleIn(tween(220, easing = FastOutSlowInEasing), initialScale = 0.94f))
+                            .togetherWith(
+                                fadeOut(tween(110)) +
+                                    scaleOut(tween(150, easing = FastOutSlowInEasing), targetScale = 0.97f),
+                            )
+                    },
+                    contentAlignment = Alignment.Center,
+                    label = "light control transition",
+                ) { control ->
+                    when (control) {
+                        LightControl.BRIGHTNESS -> BrightnessControl(
+                            value = brightnessValue,
+                            range = brightness?.range,
+                            onChange = ::setBrightness,
+                        )
+                        LightControl.TEMPERATURE -> TemperatureControl(
+                            value = temperatureValue,
+                            range = temperatureRange,
+                            onChange = ::setTemperature,
+                        )
+                        LightControl.COLOR -> AdvancedColorControl(
+                            hue = hueValue,
+                            saturation = saturationValue,
+                            onChange = ::setColor,
+                        )
+                    }
                 }
             }
             error?.let {
@@ -245,8 +268,10 @@ internal fun LightDeviceScreen(
 
 @Composable
 private fun LightModeChip(text: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val container = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
-    val content = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val targetContainer = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
+    val targetContent = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val container by animateColorAsState(targetContainer, tween(220), label = "light chip background")
+    val content by animateColorAsState(targetContent, tween(220), label = "light chip content")
     Box(
         modifier = modifier
             .height(34.dp)

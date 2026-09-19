@@ -33,8 +33,8 @@ android {
         applicationId = "com.dynorixz.smarthome"
         minSdk = 30
         targetSdk = 37
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "YANDEX_CLIENT_ID", "\"$yandexClientId\"")
         buildConfigField("String", "OAUTH_REDIRECT_URI", "\"dynorixzsmarthome://oauth/callback\"")

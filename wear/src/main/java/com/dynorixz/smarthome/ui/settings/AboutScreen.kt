@@ -1,6 +1,12 @@
 package com.dynorixz.smarthome.ui.settings
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +35,7 @@ import com.dynorixz.smarthome.BuildConfig
 
 private const val GITHUB_URL = "https://github.com/Dynorixz"
 private const val TELEGRAM_URL = "https://t.me/dynorixz"
+private const val DONATE_URL = "https://pay.cloudtips.ru/p/10b062fc"
 
 @Composable
 fun AboutScreen() {
@@ -83,8 +90,26 @@ fun AboutScreen() {
                     colors = ButtonDefaults.filledTonalButtonColors(),
                 )
             }
-            status?.let { message ->
-                item { Text(message, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center) }
+            item {
+                Button(
+                    onClick = { openOnPhone(DONATE_URL) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Донат") },
+                    secondaryLabel = { Text("Поддержать проект · на телефоне") },
+                )
+            }
+            item {
+                AnimatedVisibility(
+                    visible = status != null,
+                    enter = fadeIn(tween(180)) + expandVertically(tween(220)),
+                    exit = fadeOut(tween(120)) + shrinkVertically(tween(180)),
+                ) {
+                    Text(
+                        status.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
             item {
                 Text(

@@ -127,6 +127,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun runOperation(block: suspend () -> String) {
+        if (operation.value.refreshing) return
         viewModelScope.launch {
             operation.value = OperationState(refreshing = true)
             runSuspendCatching { block() }

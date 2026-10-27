@@ -20,7 +20,8 @@ data class OAuthLaunchRequest(val uri: Uri)
 
 interface AuthRepository {
     val tokenState: StateFlow<TokenState>
-    suspend fun beginLogin(): OAuthLaunchRequest
+    suspend fun beginLogin(onPhone: Boolean = false): OAuthLaunchRequest
+    suspend fun cancelLogin()
     suspend fun handleCallback(uri: Uri)
     suspend fun logout()
 }

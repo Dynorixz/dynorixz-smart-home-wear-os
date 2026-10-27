@@ -1,9 +1,11 @@
 <resources>
+    <string name="sensors_tile_name">Датчики</string>
+    <string name="sensors_tile_description">Крупные показания двух выбранных датчиков и переход к подробной информации</string>
     <string name="app_name">Dynorixz Smart Home for Yandex</string>
     <string name="tile_name">Умный дом</string>
     <string name="tile_description">Быстрые действия Яндекс Умного дома</string>
     <string name="lights_tile_name">Свет</string>
     <string name="lights_tile_description">Быстрое управление световыми приборами</string>
-    <string name="complication_name">Умный дом</string>
+    <string name="complication_name">Действие дома</string>
     <string name="status_complication_name">Статус дома</string>
 </resources>

@@ -16,11 +16,16 @@ import com.dynorixz.smarthome.data.network.GroupActionsRequest
 import com.dynorixz.smarthome.data.network.UserInfoResponse
 import com.dynorixz.smarthome.data.network.YandexSmartHomeApi
 import com.dynorixz.smarthome.data.network.toUserInfoResponse
+import com.dynorixz.smarthome.data.network.toDeviceInfoResponse
+import com.dynorixz.smarthome.data.network.toGroupInfoResponse
+import com.dynorixz.smarthome.data.network.CapabilityDto
+import com.dynorixz.smarthome.data.network.PropertyDto
 import com.dynorixz.smarthome.domain.ActionFailure
 import com.dynorixz.smarthome.domain.ActionOutcome
 import com.dynorixz.smarthome.domain.AppError
 import com.dynorixz.smarthome.domain.AppException
 import com.dynorixz.smarthome.domain.CapabilityAction
+import com.dynorixz.smarthome.domain.Capability
 import com.dynorixz.smarthome.domain.Device
 import com.dynorixz.smarthome.domain.DeviceGroup
 import com.dynorixz.smarthome.domain.SmartHome
@@ -36,6 +41,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 @Singleton
 class SmartHomeRepositoryImpl @Inject constructor(
@@ -76,25 +85,25 @@ class SmartHomeRepositoryImpl @Inject constructor(
             val cached = cachedResponse() ?: throw AppException(AppError.InvalidResponse())
             val oldDto = cached.devices.firstOrNull { it.id == deviceId }
                 ?: throw AppException(AppError.InvalidResponse(cached.requestId))
-            val old = mapper.device(oldDto)
-            val response = api.getDevice(deviceId)
-            require(response.status == "ok")
-            val refreshed = mapper.refreshedDevice(response, old)
+            val raw = api.getDevice(deviceId)
+            val response = raw.toDeviceInfoResponse()
+            if (response.status != "ok" || response.id != deviceId) throw AppException(AppError.InvalidResponse(response.requestId))
             val replacement = oldDto.copy(
                 name = response.name.ifBlank { oldDto.name },
                 type = response.type.ifBlank { oldDto.type },
                 householdId = response.householdId.ifBlank { oldDto.householdId },
                 room = response.room ?: oldDto.room,
                 groups = response.groups.ifEmpty { oldDto.groups },
-                capabilities = response.capabilities,
-                properties = response.properties,
+                capabilities = if (raw["capabilities"] is JsonArray) response.capabilities.map { it.withDescriptor(oldDto.capabilities) } else oldDto.capabilities,
+                properties = if (raw["properties"] is JsonArray) response.properties.map { it.withDescriptor(oldDto.properties) } else oldDto.properties,
                 errorCode = response.errorCode,
+                state = response.state ?: oldDto.state,
             )
             val updated = cached.copy(devices = cached.devices.map { if (it.id == deviceId) replacement else it })
             cacheDao.put(SmartHomeCacheEntity(json = json.encodeToString(updated), updatedAtMillis = System.currentTimeMillis()))
             freshThisProcess.value = true
             logRequestId("devices/$deviceId", response.requestId)
-            refreshed
+            mapper.device(replacement)
         }
     }
 
@@ -103,14 +112,15 @@ class SmartHomeRepositoryImpl @Inject constructor(
             val cached = cachedResponse() ?: throw AppException(AppError.InvalidResponse())
             val oldDto = cached.groups.firstOrNull { it.id == groupId }
                 ?: throw AppException(AppError.InvalidResponse(cached.requestId))
-            val response = api.getGroup(groupId)
-            require(response.status == "ok")
+            val raw = api.getGroup(groupId)
+            val response = raw.toGroupInfoResponse()
+            if (response.status != "ok" || response.id != groupId) throw AppException(AppError.InvalidResponse(response.requestId))
             val replacement = oldDto.copy(
                 name = response.name.ifBlank { oldDto.name },
                 type = response.type.ifBlank { oldDto.type },
                 householdId = response.householdId.ifBlank { oldDto.householdId },
                 devices = response.devices.map { it.id }.ifEmpty { oldDto.devices },
-                capabilities = response.capabilities,
+                capabilities = if (raw["capabilities"] is JsonArray) response.capabilities.map { it.withDescriptor(oldDto.capabilities) } else oldDto.capabilities,
             )
             val updated = cached.copy(groups = cached.groups.map { if (it.id == groupId) replacement else it })
             cacheDao.put(
@@ -209,4 +219,19 @@ class SmartHomeRepositoryImpl @Inject constructor(
         const val RECONCILIATION_DELAY_MS = 400L
         val OFFLINE_CODES = setOf("DEVICE_UNREACHABLE", "DEVICE_OFFLINE", "TIMEOUT")
     }
+}
+
+private fun CapabilityDto.withDescriptor(previous: List<CapabilityDto>): CapabilityDto {
+    if (parameters.isNotEmpty()) return this
+    val matches = previous.filter { it.type == type && (type == Capability.COLOR_SETTING || it.state?.instance == state?.instance ||
+        (it.parameters["instance"] as? JsonPrimitive)?.contentOrNull == state?.instance) }
+    val old = matches.singleOrNull() ?: return this
+    return copy(parameters = old.parameters)
+}
+
+private fun PropertyDto.withDescriptor(previous: List<PropertyDto>): PropertyDto {
+    if (parameters.isNotEmpty()) return this
+    val old = previous.singleOrNull { it.type == type && (it.state?.instance == state?.instance ||
+        (it.parameters["instance"] as? JsonPrimitive)?.contentOrNull == state?.instance) } ?: return this
+    return copy(parameters = old.parameters)
 }

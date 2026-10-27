@@ -13,15 +13,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +30,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,31 +39,21 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
-import androidx.compose.ui.semantics.progressBarRangeInfo
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -101,7 +86,6 @@ import com.dynorixz.smarthome.domain.Capability
 import com.dynorixz.smarthome.domain.CapabilityActionFactory
 import com.dynorixz.smarthome.domain.Device
 import com.dynorixz.smarthome.domain.DeviceGroup
-import com.dynorixz.smarthome.domain.DeviceProperty
 import com.dynorixz.smarthome.domain.Scenario
 import com.dynorixz.smarthome.domain.SmartHome
 import com.dynorixz.smarthome.ui.device.DeviceUiState
@@ -109,13 +93,12 @@ import com.dynorixz.smarthome.ui.device.DeviceViewModel
 import com.dynorixz.smarthome.ui.device.LightDeviceScreen
 import com.dynorixz.smarthome.ui.home.HomeUiState
 import com.dynorixz.smarthome.ui.home.HomeViewModel
+import com.dynorixz.smarthome.ui.home.galleryStatus
+import com.dynorixz.smarthome.ui.home.GalleryHomeScreen
 import com.dynorixz.smarthome.ui.settings.SettingsScreen
 import com.dynorixz.smarthome.ui.settings.SettingsViewModel
 import com.dynorixz.smarthome.ui.settings.TileSettingsScreen
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.math.abs
 
@@ -147,6 +130,7 @@ fun LoadingScreen() {
 fun DynorixzApp(
     initialDeepLink: Uri?,
     initialDestination: String? = null,
+    initialTileKind: String? = null,
 ) {
     val nav = rememberNavController()
     val settingsViewModel: SettingsViewModel = hiltViewModel()
@@ -166,6 +150,7 @@ fun DynorixzApp(
                 "scenarios", "scenario" -> nav.navigate(Route.SCENARIOS)
                 "tile" -> nav.navigate(Route.TILE_SETTINGS)
                 "settings" -> nav.navigate(Route.SETTINGS)
+                "devices" -> nav.navigate(Route.DEVICES)
             }
         }
     }
@@ -208,7 +193,9 @@ fun DynorixzApp(
             composable(Route.DEVICES) { DevicesScreen(nav, hiltViewModel()) }
             composable(Route.GROUPS) { GroupsScreen(nav, hiltViewModel()) }
             composable(Route.SETTINGS) { SettingsScreen(nav, settingsViewModel) }
-            composable(Route.TILE_SETTINGS) { TileSettingsScreen(settingsViewModel) }
+            composable(Route.TILE_SETTINGS) { TileSettingsScreen(settingsViewModel,
+                com.dynorixz.smarthome.data.local.HomeTileKind.entries.firstOrNull { it.name == initialTileKind }
+                    ?: com.dynorixz.smarthome.data.local.HomeTileKind.HOME) }
             composable(Route.ABOUT) { com.dynorixz.smarthome.ui.settings.AboutScreen() }
             composable(Route.ROOM, arguments = listOf(navArgument("roomId") { type = NavType.StringType })) {
                 RoomScreen(nav, it.arguments?.getString("roomId").orEmpty(), hiltViewModel())
@@ -266,6 +253,8 @@ private fun NavButton(text: String, secondary: String? = null, onClick: () -> Un
 private fun HomeScreen(nav: NavHostController, viewModel: HomeViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val listState = rememberScalingLazyListState()
+    val galleryListState = rememberScalingLazyListState(initialCenterItemIndex = 0)
+    val activeListState = if (state.settings.homeStyle == HomeStylePreference.GALLERY) galleryListState else listState
     val refreshThreshold = with(LocalDensity.current) { 72.dp.toPx() }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -283,10 +272,10 @@ private fun HomeScreen(nav: NavHostController, viewModel: HomeViewModel) {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
-    val pullToRefresh = Modifier.pointerInput(listState, state.refreshing) {
+    val pullToRefresh = Modifier.pointerInput(activeListState, state.refreshing) {
         awaitEachGesture {
             val down = awaitFirstDown(pass = PointerEventPass.Initial)
-            val startedAtTop = listState.centerItemIndex == 0
+            val startedAtTop = activeListState.centerItemIndex == 0
             var deltaX = 0f
             var deltaY = 0f
             var pointer = down
@@ -305,6 +294,28 @@ private fun HomeScreen(nav: NavHostController, viewModel: HomeViewModel) {
                 viewModel.refresh()
             }
         }
+    }
+    if (state.settings.homeStyle == HomeStylePreference.GALLERY) {
+        GalleryHomeScreen(
+            state = state,
+            listState = galleryListState,
+            modifier = pullToRefresh,
+            onSettings = { nav.navigate(Route.SETTINGS) },
+            onDevices = { nav.navigate(Route.DEVICES) },
+            onRooms = { nav.navigate(Route.ROOMS) },
+            onScenarios = { nav.navigate(Route.SCENARIOS) },
+            onGroups = { nav.navigate(Route.GROUPS) },
+            onDevice = { nav.navigate(Route.device(it.id)) },
+            onFavorite = { viewModel.toggleFavorite(FavoriteRef(FavoriteKind.DEVICE, it.id)) },
+            onToggle = { device ->
+                device.capabilities.filterIsInstance<Capability.OnOff>().firstOrNull()?.let { power ->
+                    viewModel.executeDevice(device.id, CapabilityActionFactory.boolean(power, !device.isOn()))
+                }
+            },
+            onScenario = { viewModel.executeScenario(it.id) },
+            onRefresh = viewModel::refresh,
+        )
+        return
     }
     if (state.settings.homeStyle == HomeStylePreference.DASHBOARD) {
         DashboardHomeScreen(
@@ -596,7 +607,7 @@ private fun GroupScreen(nav: NavHostController, groupId: String, viewModel: Home
         if (group == null && state.home != null) item { StatusText("Группа не найдена") }
         group?.let { current ->
             items(current.capabilities.filterNot { it is Capability.Unknown }, key = { "${it.type}:${it.instance}" }) { capability ->
-                CapabilityControl(capability, state.refreshing) { action, _ ->
+                com.dynorixz.smarthome.ui.device.DeviceCapabilityPanel(capability, state.refreshing, !state.offline && !state.refreshing) { action, _ ->
                     viewModel.executeGroup(groupId, action)
                 }
             }
@@ -678,66 +689,19 @@ internal fun ScenarioActionButton(
     )
 }
 
-private enum class DeviceFilter { ALL, ON, OFF, UNAVAILABLE }
-
 @Composable
 private fun DevicesScreen(nav: NavHostController, viewModel: HomeViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var query by rememberSaveable { mutableStateOf("") }
-    var filterIndex by rememberSaveable { mutableIntStateOf(0) }
-    var roomFilterIndex by rememberSaveable { mutableIntStateOf(0) }
-    var typeFilterIndex by rememberSaveable { mutableIntStateOf(0) }
-    val filter = DeviceFilter.entries[filterIndex]
-    val home = state.home
-    val roomFilters = listOf<Pair<String?, String>>(null to "все") + home?.rooms.orEmpty().map { it.id to it.name }
-    val typeFilters = listOf("Все") + home?.devices.orEmpty().map(Device::category).distinct().sorted()
-    val selectedRoom = roomFilters[roomFilterIndex % roomFilters.size]
-    val selectedType = typeFilters[typeFilterIndex % typeFilters.size]
-    val devices = home?.devices.orEmpty().filter { device ->
-        device.name.contains(query, ignoreCase = true) &&
-            (selectedRoom.first == null || device.roomId == selectedRoom.first) &&
-            (selectedType == "Все" || device.category() == selectedType) && when (filter) {
-            DeviceFilter.ALL -> true
-            DeviceFilter.ON -> device.isOn()
-            DeviceFilter.OFF -> !device.isOn()
-            DeviceFilter.UNAVAILABLE -> !device.reachable
-        }
-    }
-    WearList {
-        item { Header("Все устройства", "${devices.size}") }
-        item {
-            BasicTextField(
-                value = query,
-                onValueChange = { query = it.take(40) },
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .semantics { contentDescription = "Поиск устройств" },
-                decorationBox = { inner ->
-                    if (query.isBlank()) Text("Найти устройство")
-                    inner()
-                },
-            )
-        }
-        item {
-            NavButton("Фильтр: ${filter.label()}") { filterIndex = (filterIndex + 1) % DeviceFilter.entries.size }
-        }
-        item {
-            NavButton("Комната: ${selectedRoom.second}") {
-                roomFilterIndex = (roomFilterIndex + 1) % roomFilters.size
-            }
-        }
-        item {
-            NavButton("Тип: $selectedType") {
-                typeFilterIndex = (typeFilterIndex + 1) % typeFilters.size
-            }
-        }
-        if (devices.isEmpty()) item { StatusText("Ничего не найдено") }
-        items(devices, key = { it.id }) { DeviceButton(it, nav, viewModel) }
-    }
+    com.dynorixz.smarthome.ui.device.DeviceCatalogScreen(
+        state = state,
+        onDevice = { nav.navigate(Route.device(it.id)) },
+        onFavorite = { viewModel.toggleFavorite(FavoriteRef(FavoriteKind.DEVICE, it.id)) },
+        onToggle = { device ->
+            val power = device.capabilities.filterIsInstance<Capability.OnOff>().firstOrNull()
+            if (power != null) viewModel.executeDevice(device.id, CapabilityActionFactory.boolean(power, !device.isOn()))
+        },
+        onRefresh = viewModel::refresh,
+    )
 }
 
 @Composable
@@ -939,29 +903,13 @@ private fun DeviceScreen(nav: NavHostController, viewModel: DeviceViewModel) {
                 (it is Capability.Range && it.instance == "brightness") || it is Capability.ColorSetting
             }
             if (isLight && hasLightControl) {
-                LightDeviceScreen(
-                    device = device,
-                    pendingInstance = current.pendingInstance,
-                    error = current.error,
-                    execute = viewModel::execute,
-                )
+                LightDeviceScreen(device, current.pendingInstance, current.error, viewModel::execute,
+                    current.refreshing, viewModel::refresh)
             } else {
-                WearList {
-                    item { Header(device.name, device.type.removePrefix("devices.types.").replace('_', ' ')) }
-                    if (!device.reachable) item { StatusText("Устройство недоступно") }
-                    current.error?.let { item { StatusText(it) } }
-                    items(device.capabilities.filterNot { it is Capability.Unknown }, key = { "${it.type}:${it.instance}" }) { capability ->
-                        CapabilityControl(capability, current.pendingInstance == capability.instance, viewModel::execute)
-                    }
-                    if (device.properties.isNotEmpty()) item { Text("Показания", style = MaterialTheme.typography.titleSmall) }
-                    items(device.properties.filterNot { it is DeviceProperty.Unknown }, key = { "${it.type}:${it.instance}" }) {
-                        PropertyRow(it)
-                    }
-                    if (device.capabilities.none { it !is Capability.Unknown } && device.properties.none { it !is DeviceProperty.Unknown }) {
-                        item { StatusText("Публичный API не предоставляет доступных элементов управления") }
-                    }
-                    item { NavButton("Обновить состояние") { viewModel.refresh() } }
-                }
+                com.dynorixz.smarthome.ui.device.DeviceDetailScreen(
+                    device, current.pendingInstance, current.error, current.refreshing,
+                    viewModel::execute, viewModel::refresh,
+                )
             }
         }
     }
@@ -973,212 +921,7 @@ internal fun CapabilityControl(
     pending: Boolean,
     execute: (com.dynorixz.smarthome.domain.CapabilityAction, Long) -> Unit,
 ) {
-    val haptics = LocalHapticFeedback.current
-    when (capability) {
-        is Capability.OnOff -> {
-            val enabled = capability.value?.jsonPrimitive?.booleanOrNull == true
-            Button(
-                onClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    execute(CapabilityActionFactory.boolean(capability, !enabled), 0)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !pending,
-                label = { Text(if (enabled) "Включено" else "Выключено") },
-                secondaryLabel = { Text("Питание") },
-                colors = if (enabled) ButtonDefaults.buttonColors() else ButtonDefaults.filledTonalButtonColors(),
-            )
-        }
-        is Capability.Range -> {
-            val value = capability.value?.jsonPrimitive?.doubleOrNull ?: capability.range.min
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(capability.instance.displayName(), style = MaterialTheme.typography.titleSmall)
-                WearValueSlider(
-                    value = value,
-                    min = capability.range.min,
-                    max = capability.range.max,
-                    step = capability.range.precision,
-                    unit = capability.unit.displayUnit(),
-                    enabled = !pending && capability.randomAccess,
-                    onValueChange = {
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        execute(CapabilityActionFactory.range(capability, it), 350)
-                    },
-                )
-            }
-        }
-        is Capability.Mode -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(capability.instance.displayName(), style = MaterialTheme.typography.titleSmall)
-            capability.modes.forEach { mode ->
-                val selected = capability.value?.jsonPrimitive?.content == mode
-                Button(
-                    onClick = { execute(CapabilityActionFactory.mode(capability, mode), 0) },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                    enabled = !pending,
-                    label = { Text(mode.displayName()) },
-                    colors = if (selected) ButtonDefaults.buttonColors() else ButtonDefaults.filledTonalButtonColors(),
-                )
-            }
-        }
-        is Capability.Toggle -> {
-            val enabled = capability.value?.jsonPrimitive?.booleanOrNull == true
-            Button(
-                onClick = { execute(CapabilityActionFactory.boolean(capability, !enabled), 0) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !pending,
-                label = { Text(capability.instance.displayName()) },
-                secondaryLabel = { Text(if (enabled) "Включено" else "Выключено") },
-                colors = if (enabled) ButtonDefaults.buttonColors() else ButtonDefaults.filledTonalButtonColors(),
-            )
-        }
-        is Capability.ColorSetting -> ColorControls(capability, pending, execute)
-        is Capability.Unknown -> Unit
-    }
-}
-
-@Composable
-private fun ColorControls(
-    capability: Capability.ColorSetting,
-    pending: Boolean,
-    execute: (com.dynorixz.smarthome.domain.CapabilityAction, Long) -> Unit,
-) {
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Цвет", style = MaterialTheme.typography.titleSmall)
-        if (capability.colorModel in setOf("rgb", "hsv")) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                COLOR_PRESETS.forEach { preset ->
-                    val action = if (capability.colorModel == "rgb") {
-                        CapabilityActionFactory.color(capability, "rgb", JsonPrimitive(preset.rgb and 0xFFFFFF))
-                    } else {
-                        CapabilityActionFactory.color(
-                            capability,
-                            "hsv",
-                            JsonObject(mapOf(
-                                "h" to JsonPrimitive(preset.hue),
-                                "s" to JsonPrimitive(100),
-                                "v" to JsonPrimitive(100),
-                            )),
-                        )
-                    }
-                    Box(
-                        Modifier
-                            .size(48.dp)
-                            .background(Color(preset.rgb), CircleShape)
-                            .clickable(enabled = !pending) { execute(action, 0) }
-                            .semantics { contentDescription = preset.name },
-                    )
-                }
-            }
-        }
-        capability.temperatureRange?.let { range ->
-            WearValueSlider(
-                value = if (capability.instance == "temperature_k") capability.value?.jsonPrimitive?.doubleOrNull ?: range.min else range.min,
-                min = range.min,
-                max = range.max,
-                step = range.precision,
-                unit = "K",
-                enabled = !pending,
-                onValueChange = {
-                    execute(CapabilityActionFactory.color(capability, "temperature_k", JsonPrimitive(it.toInt())), 350)
-                },
-            )
-        }
-        capability.scenes.forEach { scene ->
-            Button(
-                onClick = { execute(CapabilityActionFactory.color(capability, "scene", JsonPrimitive(scene)), 0) },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                enabled = !pending,
-                label = { Text(scene.displayName()) },
-                colors = ButtonDefaults.filledTonalButtonColors(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun WearValueSlider(
-    value: Double,
-    min: Double,
-    max: Double,
-    step: Double,
-    unit: String,
-    enabled: Boolean,
-    onValueChange: (Double) -> Unit,
-) {
-    val focusRequester = remember { FocusRequester() }
-    val primary = MaterialTheme.colorScheme.primary
-    val track = MaterialTheme.colorScheme.surfaceContainer
-    val span = (max - min).takeIf { it > 0 } ?: 1.0
-    val fraction = ((value - min) / span).coerceIn(0.0, 1.0)
-    fun updateValue(raw: Double) {
-        val snapped = min + kotlin.math.round((raw - min) / step) * step
-        onValueChange(snapped.coerceIn(min, max))
-    }
-    fun updateFromFraction(newFraction: Float) {
-        val raw = min + (max - min) * newFraction.coerceIn(0f, 1f)
-        updateValue(raw)
-    }
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("${value.pretty()} $unit", style = MaterialTheme.typography.titleMedium)
-        Canvas(
-            Modifier
-                .fillMaxWidth()
-                .height(42.dp)
-                .focusRequester(focusRequester)
-                .focusable(enabled)
-                .onRotaryScrollEvent {
-                    if (enabled) onValueChange((value + if (it.verticalScrollPixels > 0) step else -step).coerceIn(min, max))
-                    enabled
-                }
-                .pointerInput(enabled, min, max) {
-                    if (enabled) {
-                        detectTapGestures { updateFromFraction(it.x / size.width) }
-                    }
-                }
-                .pointerInput(enabled, min, max) {
-                    if (enabled) {
-                        detectDragGestures { change, _ -> updateFromFraction(change.position.x / size.width) }
-                    }
-                }
-                .semantics {
-                    contentDescription = "Значение ${value.pretty()} $unit"
-                    progressBarRangeInfo = ProgressBarRangeInfo(
-                        current = value.toFloat(),
-                        range = min.toFloat()..max.toFloat(),
-                        steps = ((max - min) / step).toInt().minus(1).coerceAtLeast(0),
-                    )
-                    setProgress { requested ->
-                        if (!enabled) false else {
-                            updateValue(requested.toDouble())
-                            true
-                        }
-                    }
-                },
-        ) {
-            val y = size.height / 2
-            drawLine(track, start = androidx.compose.ui.geometry.Offset(8f, y), end = androidx.compose.ui.geometry.Offset(size.width - 8f, y), strokeWidth = 12f, cap = StrokeCap.Round)
-            drawLine(primary, start = androidx.compose.ui.geometry.Offset(8f, y), end = androidx.compose.ui.geometry.Offset(8f + (size.width - 16f) * fraction.toFloat(), y), strokeWidth = 12f, cap = StrokeCap.Round)
-            drawCircle(primary, radius = 11f, center = androidx.compose.ui.geometry.Offset(8f + (size.width - 16f) * fraction.toFloat(), y))
-        }
-    }
-    LaunchedEffect(enabled) { if (enabled) focusRequester.requestFocus() }
-}
-
-@Composable
-private fun PropertyRow(property: DeviceProperty) {
-    val text = when (property) {
-        is DeviceProperty.FloatValue -> "${property.value?.pretty() ?: "—"} ${property.unit.displayUnit()}"
-        is DeviceProperty.Event -> property.value?.displayName() ?: "—"
-        is DeviceProperty.Unknown -> return
-    }
-    Button(
-        onClick = {},
-        enabled = false,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(property.instance.displayName()) },
-        secondaryLabel = { Text(text) },
-        colors = ButtonDefaults.filledTonalButtonColors(),
-    )
+    com.dynorixz.smarthome.ui.device.DeviceCapabilityPanel(capability, pending, execute = execute)
 }
 
 @Composable
@@ -1191,85 +934,7 @@ internal fun OfflineNotice() {
     StatusText("Нет подключения · показываем последнее известное состояние")
 }
 
-private data class ColorPreset(val name: String, val rgb: Int, val hue: Int)
-private val COLOR_PRESETS = listOf(
-    ColorPreset("Тёплый", 0xFFFFB36B.toInt(), 30),
-    ColorPreset("Красный", 0xFFFF6B6B.toInt(), 0),
-    ColorPreset("Зелёный", 0xFF6DD58C.toInt(), 130),
-    ColorPreset("Синий", 0xFF6BA7FF.toInt(), 215),
-)
-
 private fun Device.isOn(): Boolean = capabilities.filterIsInstance<Capability.OnOff>()
     .firstOrNull()?.value?.jsonPrimitive?.booleanOrNull == true
 
-private fun Device.summary(): String = when {
-    !reachable -> "Недоступно"
-    capabilities.any { it is Capability.OnOff } -> if (isOn()) "Включено" else "Выключено"
-    properties.isNotEmpty() -> properties.first().instance.displayName()
-    else -> type.removePrefix("devices.types.").replace('_', ' ')
-}
-
-private fun Device.category(): String {
-    val raw = type.removePrefix("devices.types.")
-    return when {
-        "light" in raw -> "Свет"
-        raw in setOf("thermostat", "thermostat.ac", "humidifier", "fan", "heater") -> "Климат"
-        "socket" in raw || "switch" in raw -> "Розетки"
-        "vacuum" in raw -> "Уборка"
-        raw in setOf("tv", "media_device", "smart_speaker", "smart_speaker.yandex.station") -> "Техника"
-        else -> raw.replace('_', ' ').replaceFirstChar(Char::uppercase)
-    }
-}
-
-private fun DeviceFilter.label(): String = when (this) {
-    DeviceFilter.ALL -> "все"
-    DeviceFilter.ON -> "включено"
-    DeviceFilter.OFF -> "выключено"
-    DeviceFilter.UNAVAILABLE -> "недоступно"
-}
-
-private fun String?.displayUnit(): String = when (this) {
-    "unit.percent" -> "%"
-    "unit.temperature.celsius" -> "°C"
-    "unit.temperature.kelvin" -> "K"
-    "unit.pressure.mmhg" -> "мм рт. ст."
-    "unit.pressure.pascal" -> "Па"
-    "unit.ppm" -> "ppm"
-    "unit.watt" -> "Вт"
-    "unit.kilowatt_hour" -> "кВт⋅ч"
-    "unit.volt" -> "В"
-    "unit.ampere" -> "А"
-    null -> ""
-    else -> removePrefix("unit.").replace('_', ' ')
-}
-
-private fun String.displayName(): String = when (this) {
-    "brightness" -> "Яркость"
-    "temperature", "temperature_k" -> "Температура"
-    "volume" -> "Громкость"
-    "channel" -> "Канал"
-    "humidity" -> "Влажность"
-    "open" -> "Открытие"
-    "heat" -> "Нагрев"
-    "fan_speed" -> "Скорость вентилятора"
-    "mute" -> "Без звука"
-    "oscillation", "swing" -> "Поворот"
-    "battery_level" -> "Батарея"
-    "pressure" -> "Давление"
-    "co2_level" -> "CO₂"
-    "water_level" -> "Уровень воды"
-    "illumination" -> "Освещённость"
-    "motion" -> "Движение"
-    "smoke" -> "Дым"
-    "water_leak" -> "Протечка"
-    "low" -> "Низкий"
-    "medium", "normal" -> "Средний"
-    "high" -> "Высокий"
-    "auto" -> "Авто"
-    "cool" -> "Охлаждение"
-    "heat_mode" -> "Обогрев"
-    "fan_only" -> "Вентиляция"
-    "dry" -> "Осушение"
-    else -> replace('_', ' ').replaceFirstChar(Char::uppercase)
-}
-private fun Double.pretty(): String = if (this % 1.0 == 0.0) toInt().toString() else "%.1f".format(this)
+private fun Device.summary(): String = galleryStatus()

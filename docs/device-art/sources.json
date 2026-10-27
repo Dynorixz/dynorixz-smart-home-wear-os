@@ -1,0 +1,68 @@
+[
+  {
+    "asset": "bulb",
+    "product": "Mi Smart LED Bulb (Warm White)",
+    "source": "https://i01.appmifile.com/v1/MI_18455B3E4DA706226CF7535A58E875F0267/pms_1666845334.22448296.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "lamp",
+    "product": "Mi Bedside Lamp 2",
+    "source": "https://i01.appmifile.com/v1/MI_18455B3E4DA706226CF7535A58E875F0267/pms_1666851036.5562318.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "socket",
+    "product": "Xiaomi Smart Plug 2 (Wifi)",
+    "source": "https://i02.appmifile.com/657_operatorx_operatorx_opx/18/05/2023/4da7716ff772d94c01ac74f1d93eb818.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "vacuum",
+    "product": "Xiaomi Robot Vacuum 6",
+    "source": "https://i02.appmifile.com/642_operatorx_operatorx_opx/10/08/2026/be199ff4a33690fec01838c9410f2b57.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "humidifier",
+    "product": "Mijia Smart Evaporative Humidifier Pro",
+    "source": "https://i02.appmifile.com/527_operatorx_operatorx_opx/31/10/2025/fbb2a8e8f2df5e35f2a777d9480fce73.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "fan",
+    "product": "Mijia Smart Standing Fan Pro Slim",
+    "source": "https://i02.appmifile.com/382_operatorx_operatorx_opx/13/01/2026/c5265f981bff59deb1a5c18086d6be4e.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "tv",
+    "product": "Xiaomi TV FX Mini LED 65",
+    "source": "https://i02.appmifile.com/236_operatorx_operatorx_opx/27/05/2026/eadc777148bf0b75613757236aaccb6e.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "kettle",
+    "product": "Xiaomi Smart Kettle 2 Pro",
+    "source": "https://i02.appmifile.com/840_operatorx_operatorx_opx/04/09/2024/b736086ff1218bf851a6550de90e566d.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "camera",
+    "product": "Xiaomi Smart Camera C401",
+    "source": "https://i02.appmifile.com/929_operatorx_operatorx_opx/15/07/2026/6c6a2df5e3960e52af0caddf93dbcbea.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "purifier",
+    "product": "Mijia Smart Air Purifier 6 Plus",
+    "source": "https://i02.appmifile.com/430_operatorx_operatorx_opx/29/06/2026/522c490d0b81e3df4344039f9b045f6c.png",
+    "page": "https://www.mi.com/global/smart-home/"
+  },
+  {
+    "asset": "speaker",
+    "product": "Яндекс Станция Мини 3",
+    "source": "https://alice.yandex.ru/support/docs-assets/alice/rev/r18825736/ru/_assets/device-card/station/station-mini3.png",
+    "page": "https://alice.yandex.ru/support/ru/station/meet/light-ring"
+  }
+]

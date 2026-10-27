@@ -10,12 +10,15 @@ import com.dynorixz.smarthome.complication.SmartHomeComplicationService
 import com.dynorixz.smarthome.data.local.AppSettings
 import com.dynorixz.smarthome.data.local.FavoriteRef
 import com.dynorixz.smarthome.data.local.HomeStylePreference
+import com.dynorixz.smarthome.data.local.HomeTileKind
 import com.dynorixz.smarthome.data.local.ThemePreference
 import com.dynorixz.smarthome.data.local.UserPreferences
 import com.dynorixz.smarthome.domain.AuthRepository
 import com.dynorixz.smarthome.domain.SmartHome
 import com.dynorixz.smarthome.domain.SmartHomeRepository
 import com.dynorixz.smarthome.tile.SmartHomeTileService
+import com.dynorixz.smarthome.tile.LightsTileService
+import com.dynorixz.smarthome.tile.SensorsTileService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -31,6 +34,8 @@ data class SettingsUiState(
     val tileFavorites: List<FavoriteRef> = emptyList(),
     val complicationFavorite: FavoriteRef? = null,
     val home: SmartHome? = null,
+    val tileLights: List<FavoriteRef> = emptyList(),
+    val tileSensors: List<FavoriteRef> = emptyList(),
 )
 
 @HiltViewModel
@@ -43,11 +48,12 @@ class SettingsViewModel @Inject constructor(
     val state: StateFlow<SettingsUiState> = combine(
         preferences.settings,
         preferences.favorites,
-        preferences.tileFavorites,
+        preferences.tileSelections,
         preferences.complicationFavorite,
         smartHomeRepository.observeHome(),
     ) { settings, favorites, tile, complication, home ->
-        SettingsUiState(settings, favorites, tile, complication, home)
+        SettingsUiState(settings, favorites, tile[HomeTileKind.HOME].orEmpty(), complication, home,
+            tile[HomeTileKind.LIGHTS].orEmpty(), tile[HomeTileKind.SENSORS].orEmpty())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun setDynamicColor(value: Boolean) = update { copy(dynamicColor = value) }
@@ -57,9 +63,15 @@ class SettingsViewModel @Inject constructor(
     fun setShowScenarios(value: Boolean) = update { copy(showScenarios = value) }
     fun setSyncInterval(value: Int) = update { copy(syncIntervalMinutes = value.coerceIn(1, 60)) }
     fun setTileFavorites(value: List<FavoriteRef>) {
+        setTileSelection(HomeTileKind.HOME, value)
+    }
+    fun setTileSelection(kind: HomeTileKind, value: List<FavoriteRef>) {
         viewModelScope.launch {
-            preferences.setTileFavorites(value)
-            TileService.getUpdater(context).requestUpdate(SmartHomeTileService::class.java)
+            preferences.setTileSelection(kind, value)
+            val updater = TileService.getUpdater(context)
+            updater.requestUpdate(SmartHomeTileService::class.java)
+            updater.requestUpdate(LightsTileService::class.java)
+            updater.requestUpdate(SensorsTileService::class.java)
         }
     }
 
@@ -73,7 +85,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
     fun reorderFavorites(value: List<FavoriteRef>) { viewModelScope.launch { preferences.reorderFavorites(value) } }
-    fun logout() { viewModelScope.launch { authRepository.logout() } }
+    fun logout() { viewModelScope.launch { authRepository.logout(); com.dynorixz.smarthome.ui.WearSurfaceUpdater(context).requestAll() } }
 
     private fun update(transform: AppSettings.() -> AppSettings) {
         viewModelScope.launch { preferences.updateSettings(state.value.settings.transform()) }

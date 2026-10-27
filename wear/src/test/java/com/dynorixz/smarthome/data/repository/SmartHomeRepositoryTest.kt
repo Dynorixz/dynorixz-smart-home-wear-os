@@ -12,8 +12,13 @@ import com.dynorixz.smarthome.domain.AppException
 import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import com.dynorixz.smarthome.domain.DeviceProperty
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
@@ -120,6 +125,63 @@ class SmartHomeRepositoryTest {
         assertTrue(failure.error is AppError.DeviceOffline)
     }
 
+    @Test fun `sensor detail accepts nullable provider metadata and preserves its units`() = runTest {
+        server.enqueue(ok(SENSOR_HOME))
+        server.enqueue(ok("""{"status":"ok","request_id":"nullable","id":"s1","name":null,"type":null,"household_id":null,"groups":null,"capabilities":null,"state":"online","properties":[{"type":"devices.properties.float","parameters":null,"retrievable":null,"reportable":null,"last_updated":"2026-10-20T12:00:00Z","state":{"instance":"temperature","value":25.1}}]}"""))
+        val dao = FakeDao()
+        val repository = repository(dao)
+        repository.refreshHome()
+        val device = repository.refreshDevice("s1")
+        assertEquals("Климат", device.name)
+        val reading = assertIs<DeviceProperty.FloatValue>(device.properties.single())
+        assertEquals(25.1, reading.value)
+        assertEquals("unit.temperature.celsius", reading.unit)
+        assertTrue(device.reachable)
+        assertEquals(25.1, repository.observeHome().first()?.devices?.single()?.properties?.filterIsInstance<DeviceProperty.FloatValue>()?.single()?.value)
+    }
+
+    @Test fun `offline detail keeps last readings when provider omits property arrays`() = runTest {
+        server.enqueue(ok(SENSOR_HOME))
+        server.enqueue(ok("""{"status":"ok","id":"s1","state":"offline","properties":null,"capabilities":null}"""))
+        val repository = repository(FakeDao())
+        repository.refreshHome()
+        val device = repository.refreshDevice("s1")
+        assertFalse(device.reachable)
+        assertEquals(25.0, assertIs<DeviceProperty.FloatValue>(device.properties.single()).value)
+    }
+
+    @Test fun `wrong device id cannot overwrite a cached sensor`() = runTest {
+        server.enqueue(ok(SENSOR_HOME))
+        server.enqueue(ok("""{"status":"ok","id":"someone-else","properties":[]}"""))
+        val dao = FakeDao()
+        val repository = repository(dao)
+        repository.refreshHome()
+        val original = dao.get()
+        assertIs<AppError.InvalidResponse>(assertFailsWith<AppException> { repository.refreshDevice("s1") }.error)
+        assertEquals(original, dao.get())
+    }
+
+    @Test fun `one malformed property value does not discard a valid temperature`() = runTest {
+        server.enqueue(ok(SENSOR_HOME))
+        server.enqueue(ok("""{"status":"ok","id":"s1","properties":[{"type":"devices.properties.float","state":{"instance":"temperature","value":25.1}},{"type":"devices.properties.float","parameters":{"instance":"humidity","unit":"unit.percent"},"state":{"instance":"humidity","value":{"unexpected":true}}}]}"""))
+        val repository = repository(FakeDao())
+        repository.refreshHome()
+        val properties = repository.refreshDevice("s1").properties.filterIsInstance<DeviceProperty.FloatValue>()
+        assertEquals(25.1, properties.first().value)
+        assertNull(properties.last().value)
+    }
+
+    @Test fun `error response still fails and keeps the previous readings`() = runTest {
+        server.enqueue(ok(SENSOR_HOME))
+        server.enqueue(ok("""{"status":"error","id":"s1","request_id":"bad-reply"}"""))
+        val dao = FakeDao()
+        val repository = repository(dao)
+        repository.refreshHome()
+        val original = dao.get()
+        assertIs<AppError.InvalidResponse>(assertFailsWith<AppException> { repository.refreshDevice("s1") }.error)
+        assertEquals(original, dao.get())
+    }
+
     private fun repository(
         dao: FakeDao,
         invalidate: suspend () -> Unit = {},
@@ -147,6 +209,7 @@ class SmartHomeRepositoryTest {
     }
 
     private companion object {
+        const val SENSOR_HOME = """{"status":"ok","devices":[{"id":"s1","name":"Климат","type":"devices.types.sensor.climate","capabilities":[],"properties":[{"type":"devices.properties.float","retrievable":true,"parameters":{"instance":"temperature","unit":"unit.temperature.celsius"},"state":{"instance":"temperature","value":25.0}}]}]}"""
         const val USER_INFO = """{"status":"ok","request_id":"r1","rooms":[],"groups":[],"scenarios":[],"households":[],"devices":[{"id":"d1","name":"Лампа","type":"devices.types.light","capabilities":[{"type":"devices.capabilities.on_off","retrievable":true,"state":{"instance":"on","value":false}}],"properties":[]}]}"""
         const val DEVICE_INFO = """{"status":"ok","request_id":"r3","id":"d1","name":"Лампа","type":"devices.types.light","capabilities":[{"type":"devices.capabilities.on_off","retrievable":true,"state":{"instance":"on","value":true}}],"properties":[]}"""
         const val ACTION_RESULT = """{"status":"ok","request_id":"r2","devices":[{"id":"d1","capabilities":[{"type":"devices.capabilities.on_off","state":{"instance":"on","action_result":{"status":"DONE"}}}]}]}"""

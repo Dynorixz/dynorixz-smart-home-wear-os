@@ -1,260 +1,124 @@
 <p align="center">
-  <img src="wear/src/main/res/drawable-nodpi/app_icon_art.png" width="144" alt="Dynorixz Smart Home icon">
-</p>
-
-<h1 align="center">Dynorixz Smart Home</h1>
-
-<p align="center">
-  Минималистичный клиент «Дома с Алисой» для Wear OS — устройства, свет, группы и сценарии прямо на запястье.
+  <img src="docs/images/hero.svg" width="100%" alt="Dynorixz Smart Home — дом на запястье">
 </p>
 
 <p align="center">
-  <a href="https://github.com/Dynorixz/dynorixz-smart-home-wear-os/releases/latest"><img alt="GitHub release" src="https://img.shields.io/github/v/release/Dynorixz/dynorixz-smart-home-wear-os?display_name=tag&style=flat-square"></a>
-  <img alt="Wear OS 3+" src="https://img.shields.io/badge/Wear%20OS-3%2B-34A853?style=flat-square&logo=wearos&logoColor=white">
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4-7F52FF?style=flat-square&logo=kotlin&logoColor=white">
-  <img alt="Android API 37" src="https://img.shields.io/badge/targetSdk-37-3DDC84?style=flat-square&logo=android&logoColor=white">
+  <a href="https://github.com/Dynorixz/dynorixz-smart-home-wear-os/releases/latest"><img src="https://img.shields.io/github/v/release/Dynorixz/dynorixz-smart-home-wear-os?display_name=tag&style=flat-square&color=8BCDBB&label=release" alt="Последний релиз"></a>
+  <img src="https://img.shields.io/badge/Wear_OS-3%2B-8BCDBB?style=flat-square" alt="Wear OS 3 и новее">
+  <img src="https://img.shields.io/badge/интерфейс-русский-FFCF88?style=flat-square" alt="Интерфейс на русском языке">
+  <img src="https://img.shields.io/badge/телефонный_Home-не_требуется-8BCDBB?style=flat-square" alt="Home на телефоне не требуется">
 </p>
 
-Dynorixz Smart Home получает реальный дом пользователя через публичный API Яндекса и строит интерфейс по фактически объявленным устройством `capabilities` и `properties`. В production-коде нет демонстрационных устройств, подмены ответов или private API.
+<p align="center">
+  <strong>Свет, приборы и сценарии «Дома с Алисой» — прямо на часах.</strong><br>
+  Фотографии устройств, крупные показания датчиков, системные плитки и действия с циферблата.
+</p>
 
-> Это независимый клиент с опубликованным исходным кодом, не официальный продукт Яндекса. Названия Яндекс, Алиса и «Дом с Алисой» принадлежат их правообладателям.
+<p align="center">
+  <a href="https://github.com/Dynorixz/dynorixz-smart-home-wear-os/releases/download/v1.8.0/Dynorixz-Home-1.8.0-Wear.apk"><strong>↓ Скачать APK для часов</strong></a>
+  &nbsp; · &nbsp; <a href="docs/installation.md">Установить и войти</a>
+  &nbsp; · &nbsp; <a href="docs/screenshots.md">Все скриншоты</a>
+  &nbsp; · &nbsp; <a href="CHANGELOG.md">История изменений</a>
+</p>
 
-## Интерфейс
+> Независимый клиент для Wear OS, не официальный продукт Яндекса. Устройства и доступные функции загружаются из вашего аккаунта через публичный API Яндекса.
+
+## Посмотрите, как это работает
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/light-brightness.png" width="240" alt="Регулировка яркости"></td>
-    <td align="center"><img src="docs/screenshots/light-temperature.png" width="240" alt="Регулировка цветовой температуры"></td>
-    <td align="center"><img src="docs/screenshots/light-color.png" width="240" alt="Выбор цвета"></td>
+    <td align="center" width="33%"><img src="docs/screenshots/gallery-home-192.png" width="240" alt="Галерея: фотография лампы и отдельная кнопка питания"></td>
+    <td align="center" width="33%"><img src="docs/screenshots/light-overview.png" width="240" alt="Свет: питание, цвет, белый свет и яркость"></td>
+    <td align="center" width="33%"><img src="docs/screenshots/sensor-opening.png" width="240" alt="Датчик открытия: крупное состояние Закрыто"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Крупный индикатор яркости</sub></td>
-    <td align="center"><sub>Температура света</sub></td>
-    <td align="center"><sub>Полноцветная палитра</sub></td>
+    <td align="center"><strong>Дом с фотографиями</strong><br><sub>Открыть прибор или сразу переключить питание</sub></td>
+    <td align="center"><strong>Удобное управление светом</strong><br><sub>Большие кнопки, палитра и точная настройка</sub></td>
+    <td align="center"><strong>Понятные показания</strong><br><sub>Состояния по-русски, крупные значения и единицы</sub></td>
   </tr>
 </table>
 
-## Быстрый старт
+Скриншоты в README получены из интерфейса приложения на тестовых данных. На ваших часах будут ваши приборы, комнаты, сценарии и показания. [Полная галерея с пояснениями →](docs/screenshots.md)
 
-1. Скачайте два APK из [последнего релиза](https://github.com/Dynorixz/dynorixz-smart-home-wear-os/releases/latest): Phone устанавливается на сопряжённый Android-телефон, Wear — на часы.
-2. Запустите приложение на часах и нажмите «Войти».
-3. Продолжите вход на телефоне либо выберите вход непосредственно на часах и разрешите приложению доступ к умному дому.
-4. После возврата в приложение устройства загрузятся автоматически. При желании добавьте плитки «Умный дом» и «Свет» через системный редактор Wear OS.
+## Что умеет приложение
 
-**Пользователям готового релиза не нужно создавать OAuth-приложение, вводить Client ID или собирать проект.** Production APK уже настроены: достаточно установить их и войти в Яндекс ID.
+| Возможность | Что можно сделать |
+| --- | --- |
+| **Мой дом** | Выбрать «Список», «Панель» или «Галерею», открыть комнаты, найти прибор, настроить избранное |
+| **Свет** | Переключить питание, изменить яркость, выбрать цвет и температуру белого света, если это поддерживает лампа |
+| **Другие приборы** | Менять доступные режимы, громкость, температуру и переключатели — по возможностям устройства |
+| **Датчики** | Смотреть температуру, влажность, открытие, движение, протечку, заряд и другие переданные показания |
+| **Группы и сценарии** | Управлять группой приборов или запускать сценарий Яндекса |
+| **Плитки часов** | Получить быстрый доступ к действиям дома, свету и датчикам свайпом с циферблата |
+| **Ярлыки циферблата** | Назначить отдельное действие каждому поддерживаемому слоту |
 
-Телефонный модуль не имеет launcher-экрана: это небольшой relay, который принимает OAuth callback и безопасно передаёт его сопряжённым часам.
+В «Галерее» карточка открывает прибор, отдельная кнопка управляет питанием, а удерживание меняет избранное. Фотографии иллюстрируют тип устройства и включены в APK: при открытии экрана их не нужно скачивать. [Источники изображений](docs/device-art/README.md).
 
-## Что реализовано
+## Новое в 1.8.0: три системные плитки
 
-- OAuth Authorization Code + PKCE S256 со `state`, без `CLIENT_SECRET` в приложении;
-- предпочтительное продолжение входа в браузере телефона через Wear Data Layer и прямой browser flow на часах;
-- зашифрованное AES-GCM хранение токена в DataStore, ключ — в Android Keystore;
-- загрузка домов, комнат, устройств, групп и сценариев из `GET /v1.0/user/info`;
-- обновление конкретного устройства через `GET /v1.0/devices/{id}`;
-- реальные команды устройства, группы и сценария;
-- универсальный capability engine: `on_off`, `range`, `mode`, `toggle`, `color_setting`;
-- RGB/HSV-пресеты, диапазон цветовой температуры и сцены цвета, когда они объявлены устройством;
-- read-only float/event properties: температура, влажность, батарея, давление, движение, протечка и любые другие instance из API;
-- комнаты, группы, сценарии, поиск и фильтры по состоянию, комнате и типу;
-- локальное избранное для устройств, групп и сценариев, включая порядок элементов;
-- Wear OS Tile и complications с выбираемыми действиями;
-- rotary input для всех числовых диапазонов;
-- optimistic UI с последующей сверкой реального состояния;
-- Room-кэш, явные offline/stale состояния и lifecycle-aware автообновление;
-- типизированные ошибки 401/403/408/429/5xx, device offline и безопасный диагностический logging;
-- Material 3 for Wear OS, Dynamic Color, светлая/тёмная/системная темы.
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/screenshots/tile-home.png" width="230" alt="Плитка Умный дом: приборы и сценарий"></td>
+    <td align="center" width="33%"><img src="docs/screenshots/tile-lights.png" width="230" alt="Плитка Свет: фотографии и состояние ламп"></td>
+    <td align="center" width="33%"><img src="docs/screenshots/tile-sensors.png" width="230" alt="Плитка Датчики: температура и влажность"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Умный дом</strong><br><sub>До трёх приборов, групп или сценариев</sub></td>
+    <td align="center"><strong>Свет</strong><br><sub>До трёх ламп с быстрым переключением</sub></td>
+    <td align="center"><strong>Датчики</strong><br><sub>До двух приборов с крупными показаниями</sub></td>
+  </tr>
+</table>
 
-Поддерживается Wear OS 3 и новее (`minSdk 30`). Проект собирается с `compileSdk/targetSdk 37`.
+**Добавить на Samsung:** с циферблата свайпайте справа налево до конца → **Добавить карточки** / **Добавить плитки** → **Dynorixz Smart Home** → выберите плитку. Названия системных пунктов зависят от версии Wear OS.
 
-## Структура проекта
+**Настроить:** нажмите шестерёнку на плитке или откройте **Home → Настройки → Плитки часов**. У каждой плитки отдельный набор карточек и порядок. Для «Умного дома» выберите действия; «Свет» и «Датчики» без ручного выбора подбирают подходящие приборы автоматически.
 
-```text
-wear/       основное Wear OS приложение, Tile и complication provider
-mobile/     минимальный телефонный relay для OAuth callback
-gradle/     version catalog и Gradle Wrapper
-```
+Плитки показывают давность снимка данных. Нажатие датчика открывает подробности, а команда питания сначала проверяет актуальное состояние. [Подробности и настройка плиток →](docs/tiles-1.8.0.md)
 
-Оба APK имеют один `applicationId` — `com.dynorixz.smarthome`. Это разные device-target APK: `wear` устанавливается на часы, `mobile` — на сопряжённый телефон. Для release они обязательно должны быть подписаны одним сертификатом.
+В этом же обновлении исправлена обработка пустых необязательных полей ответа датчика и старого предупреждения «Получен некорректный ответ». Неизвестные значения не заменяются нулями, ошибки команд и настоящие ошибки сервера остаются видимыми.
 
-## Требования
+## Установка за несколько шагов
 
-- часы с Wear OS 3 или новее и доступом в интернет;
-- сопряжённый Android-телефон с Google Play Services для удобного входа через телефон.
+1. Скачайте **[Dynorixz-Home-1.8.0-Wear.apk](https://github.com/Dynorixz/dynorixz-smart-home-wear-os/releases/download/v1.8.0/Dynorixz-Home-1.8.0-Wear.apk)** и установите на часы с **Wear OS 3 или новее**.
+2. Откройте Home на часах и нажмите **Войти**.
+3. На сопряжённом Android-телефоне откроется браузер Яндекса. Войдите и разрешите доступ к умному дому. Во время входа оставьте Home открытым на часах.
+4. Дождитесь загрузки приборов. Добавьте плитки и ярлыки циферблата по желанию.
 
-Для самостоятельной сборки дополнительно нужны Android Studio с поддержкой AGP 9.3.x, JDK 17, Android SDK Platform 37 и собственное OAuth-приложение Яндекса.
+**Home на телефоне устанавливать не нужно.** Для входа через телефон нужны его браузер, Google Play Services и штатное приложение Galaxy Wearable / Wear OS. Пароль вводится на странице Яндекс ID. Если на часах есть браузер, доступен также вход непосредственно на часах.
 
-## Для разработчиков: собственное OAuth-приложение
+Готовый релиз уже настроен: создавать OAuth-приложение, вводить Client ID и собирать проект обычному пользователю не требуется. Необязательный `Phone-optional.apk` сохранён для совместимости со старым способом возврата авторизации.
 
-> Этот раздел нужен только для самостоятельной сборки, форка или изменения Client ID. Пользователи APK со страницы Releases могут его пропустить.
+### Обновление с предыдущих версий
 
-1. Откройте [Yandex OAuth](https://oauth.yandex.ru/) и создайте приложение **для авторизации пользователей**. Для production заполните название, контакты и сведения, которые увидит пользователь.
-2. В доступах выберите только:
+- **Сборки 1.4.0–1.8.0 с текущей подписью:** устанавливайте APK поверх, чтобы сохранить вход и настройки.
+- **Публичные релизы 1.2.0 / 1.3.0:** у них другой сертификат. Android не установит новую версию поверх. Понадобится однократная переустановка с повторным входом; локальные настройки и назначенные действия потребуется настроить заново.
 
-   - `iot:view` — просмотр умного дома;
-   - `iot:control` — управление устройствами, группами и сценариями.
+[Пошаговая установка через ADB, проверка подписи и решение проблем →](docs/installation.md)
 
-3. Добавьте точный Redirect URI:
+## Действия прямо с циферблата
 
-   ```text
-   dynorixzsmarthome://oauth/callback
-   ```
+Удерживайте циферблат Samsung → **Изменить** → выберите слот дополнения → **Действие дома** в группе Dynorixz Smart Home. Выберите прибор, группу или сценарий и завершите настройку циферблата.
 
-   Он должен совпадать по scheme, host и path. Callback объявлен и в `wear`, и в `mobile`: на телефоне код передаётся на часы по Wear Data Layer; при входе непосредственно на часах callback принимает Wear-приложение.
+Для прибора и группы доступны **Переключить**, **Включить**, **Выключить**, **Открыть управление**. Сценарий запускается одним нажатием. Каждый слот хранит свой выбор; доступные формы и размещение зависят от циферблата.
 
-4. Для Android-платформы укажите package name `com.dynorixz.smarthome` и SHA-256 fingerprint сертификата debug или release сборки. Если консоль разделяет Android-платформу и Web services, Redirect URI добавляется в список Redirect URI, а package/fingerprint — в Android-платформу.
-5. Скопируйте Client ID. Секрет приложения не копируйте: native client использует PKCE, и официальный token exchange допускает `client_id + code_verifier` без `client_secret`.
+[Инструкция по ярлыкам циферблата →](docs/complications.md)
 
-Официальные источники: [протокол пользовательского Smart Home API](https://yandex.ru/dev/dialogs/smart-home/doc/ru/concepts/platform-protocol), [получение authorization code и PKCE](https://yandex.com/dev/id/doc/en/codes/code-url), [регистрация OAuth-приложения](https://yandex.com/dev/id/doc/en/register-auth).
+## Данные, связь и совместимость
 
-## Для разработчиков: настройка Client ID
+- Часам нужен интернет и сохранённый вход в Яндекс ID. Поддержаны только возможности, которые устройство объявляет в API.
+- При отсутствии связи приложение показывает сохранённые данные и их давность. Плитки и ярлыки обновляются с учётом системного расписания Wear OS, поэтому не являются непрерывным мониторингом.
+- Токен хранится в зашифрованном виде с ключом Android Keystore. Используются Authorization Code + PKCE и проверка `state`; `CLIENT_SECRET` в приложении нет.
+- Интерфейс поддерживает тёмную, светлую и системную тему. Плитки используют постоянную тёмную палитру с мятными и янтарными акцентами.
 
-Скопируйте пример локальной конфигурации:
+## Для разработчиков
 
-```powershell
-Copy-Item local.properties.example local.properties
-```
+| Раздел | Содержание |
+| --- | --- |
+| [Сборка и собственный OAuth](docs/development.md) | Требования, конфигурация, команды Gradle, подпись и структура проекта |
+| [Скриншоты](docs/screenshots.md) | Главный экран, каталог, свет, датчики и плитки с пояснениями |
+| [Изменения 1.8.0](docs/releases/1.8.0.md) | Сводка публичного обновления с 1.3.0, установка и проверка файлов |
+| [История версий](CHANGELOG.md) | Изменения по версиям |
 
-Отредактируйте `local.properties`:
+Для релиза 1.8.0 пройдены **143 автоматических теста**, статический анализ завершён без ошибок. Release APK с R8 проверен на Samsung Galaxy Watch: вход сохранился, плитки отображаются и открывают свои настройки. Дополнительные проверки включают круглый экран 192 dp и экран 227 dp с увеличенным шрифтом.
 
-```properties
-sdk.dir=C\:\\Users\\you\\AppData\\Local\\Android\\Sdk
-YANDEX_CLIENT_ID=YOUR_REAL_CLIENT_ID
-```
-
-`local.properties`, keystore-файлы и другие credentials исключены из Git. Client ID сам по себе не является секретом, но хранится в единственной локальной точке настройки. Access token в build configuration не попадает.
-
-## Сборка из исходников
-
-Debug APK:
-
-```powershell
-.\gradlew.bat :wear:assembleDebug :mobile:assembleDebug
-```
-
-Результаты:
-
-```text
-wear/build/outputs/apk/debug/wear-debug.apk
-mobile/build/outputs/apk/debug/mobile-debug.apk
-```
-
-Release build включает R8 и shrink resources. Для подписанных APK задайте четыре переменные окружения перед запуском Gradle:
-
-```powershell
-$env:DYNORIXZ_KEYSTORE_PATH='C:\secure\dynorixz-release.jks'
-$env:DYNORIXZ_STORE_PASSWORD='<store-password>'
-$env:DYNORIXZ_KEY_ALIAS='<key-alias>'
-$env:DYNORIXZ_KEY_PASSWORD='<key-password>'
-.\gradlew.bat :wear:assembleRelease :mobile:assembleRelease
-```
-
-Без этих переменных Gradle создаст unsigned release APK. Не коммитьте keystore или пароли. Подписывайте оба модуля одним ключом.
-
-На Windows AGP может отказываться работать из каталога с нелатинскими символами. В проекте включён `android.overridePathCheck=true`; если сторонний инструмент всё равно некорректно обрабатывает путь, используйте checkout с ASCII-путём или временно подключите каталог буквой диска.
-
-## Установка
-
-Готовые production APK доступны на странице [Releases](https://github.com/Dynorixz/dynorixz-smart-home-wear-os/releases). Файл `Phone` устанавливается на телефон, `Wear` — на часы. Оба APK подписаны одним сертификатом Dynorixz.
-
-SHA-256 production-сертификата:
-
-```text
-FE:3F:1A:B3:AE:59:52:8B:B7:6F:6A:9C:8E:81:00:6E:29:ED:48:E4:B3:C6:CD:54:5E:B1:6B:41:CD:74:4D:CA
-```
-
-Если на устройстве уже установлена сборка с другой подписью, Android не сможет обновить её поверх. Удалите старую версию и установите production APK заново; локальные настройки и OAuth-сессия при этом будут очищены.
-
-Включите Developer options и ADB debugging на часах. Подключитесь по Wi-Fi или через Android Studio Pair Devices, затем:
-
-```powershell
-adb -s <WATCH_SERIAL> install -r wear\build\outputs\apk\debug\wear-debug.apk
-```
-
-Для входа через телефон подключите телефон к ADB и установите relay:
-
-```powershell
-adb -s <PHONE_SERIAL> install -r mobile\build\outputs\apk\debug\mobile-debug.apk
-```
-
-Если relay не установлен или телефон недоступен, на экране входа выберите «Открыть на часах». Пароль вводится только на официальной странице Яндекс ID.
-
-После установки добавьте Tile «Умный дом» через системный редактор Tiles и complication через редактор циферблата. Список быстрых действий выбирается в настройках приложения; провайдеры обновляются сразу после сохранения выбора.
-
-## Реализованный публичный API
-
-| Назначение | Endpoint | Поведение клиента |
-|---|---|---|
-| Полный дом | `GET /v1.0/user/info` | Дома, комнаты, устройства, группы, сценарии, capabilities/properties и локальный Room-кэш |
-| Состояние устройства | `GET /v1.0/devices/{device_id}` | Сверка после действия и ручное обновление |
-| Действия устройств | `POST /v1.0/devices/actions` | Все поддержанные UI-команды формируются из descriptor/state instance/value |
-| Состояние группы | `GET /v1.0/groups/{group_id}` | Актуальные capabilities загружаются при открытии группы и после действий |
-| Действия группы | `POST /v1.0/groups/{group_id}/actions` | Динамические group capabilities |
-| Запуск сценария | `POST /v1.0/scenarios/{scenario_id}/actions` | Реальный запуск с результатом и haptic feedback |
-
-Тела действий соответствуют документации Яндекса: [устройства](https://yandex.ru/dev/dialogs/smart-home/doc/ru/concepts/platform-capabilities), [группы](https://yandex.ru/dev/dialogs/smart-home/doc/ru/concepts/platform-group-capabilities), [сценарии](https://yandex.ru/dev/dialogs/smart-home/doc/ru/concepts/platform-scenario).
-
-Неизвестные будущие capability/property десериализуются в `Unknown`, не приводят к падению и не создают неподтверждённую управляющую кнопку. Любой известный capability работает независимо от названия или бренда устройства: лампы, розетки, климат, пылесосы, ТВ и колонки получают те контролы, которые реально объявляет API.
-
-## Что публичный API не предоставляет
-
-Клиент намеренно не имитирует отсутствующие возможности:
-
-- создание, редактирование и перестановка комнат, устройств, групп и сценариев;
-- добавление новых физических устройств и привязка аккаунтов производителей;
-- история датчиков, энергопотребления и событий, если устройство отдаёт только текущее значение;
-- голосовой ввод Алисы, управление очередью музыки и приватные функции Яндекс Станций;
-- видеопотоки камер и домофонов;
-- firmware/update, диагностика производителя и настройки, не представленные как public capability;
-- удаление устройства из аккаунта, хотя endpoint присутствует в протоколе: это необратимая административная операция и не относится к управлению с часов.
-
-Если устройство не публикует нужную capability/property, приложение сообщает, что доступных элементов управления нет. Private endpoints приложения «Дом с Алисой» не используются.
-
-## Offline, ошибки и синхронизация
-
-- Последний успешный `/user/info` хранится в Room и после перезапуска показывается как устаревший кэш.
-- Управляющие действия отключаются без сети; fake success не показывается.
-- При изменении значения UI оптимистично обновляется, ждёт подтверждение API и выполняет delayed reconciliation.
-- Неуспешное действие откатывается к последнему подтверждённому состоянию.
-- 401 очищает зашифрованную сессию и кэш и возвращает пользователя к входу.
-- Автообновление работает только пока главный экран находится в lifecycle `STARTED`; интервал задаётся в настройках.
-- Логи содержат method, endpoint path, HTTP status, latency и `request_id`, но не headers, Bearer token, OAuth code или тела запросов.
-
-## Безопасность
-
-- OAuth `state` защищает callback от подмены, PKCE S256 связывает code с конкретной попыткой входа.
-- Access/refresh token и незавершённая OAuth-сессия сериализуются в один AES-GCM blob в DataStore.
-- AES-ключ создаётся и остаётся в Android Keystore.
-- HTTP cleartext запрещён manifest-настройкой; API и OAuth используют HTTPS.
-- В приложении нет `CLIENT_SECRET`, hardcoded токена и стороннего backend.
-- Phone relay передаёт только одноразовый callback URL на сопряжённые часы; `state` и PKCE проверяются уже на часах.
-
-Custom URI scheme может быть заявлен другим приложением Android. Риск перехвата authorization code снижается PKCE, а риск подмены callback — проверкой `state`. Для публикации рекомендуется также зарегистрировать release SHA-256 fingerprint и рассмотреть verified HTTPS App Link, если у проекта появится доверенный домен.
-
-## Тесты и проверки
-
-Unit/API tests:
-
-```powershell
-.\gradlew.bat :wear:testDebugUnitTest
-```
-
-Compose UI tests на подключённых часах или Wear OS emulator:
-
-```powershell
-.\gradlew.bat :wear:connectedDebugAndroidTest
-```
-
-Полная локальная проверка:
-
-```powershell
-.\gradlew.bat :wear:testDebugUnitTest :wear:lintDebug :wear:assembleDebug :wear:assembleRelease :mobile:assembleDebug :mobile:assembleRelease
-```
-
-Тесты покрывают mapping capability/property, генерацию действий, token expiry, error mapping, реальный JSON-контракт MockWebServer, 401/session invalidation, offline action, сценарий и основные Compose-контролы. End-to-end проверка реального аккаунта требует собственного Client ID, consent пользователя и физических часов/эмулятора; credentials в репозитории намеренно отсутствуют.
-
-## Релизы и лицензирование
-
-История заметных изменений находится в [CHANGELOG.md](CHANGELOG.md). Публикуемые APK проверяются `apksigner`; release keystore и его пароль никогда не входят в репозиторий.
-
-Отдельная лицензия на повторное использование кода пока не предоставлена. Публикация исходников на GitHub сама по себе не передаёт дополнительных прав сверх предусмотренных правилами GitHub и применимым законодательством.
+Нашли проблему? [Создайте issue](https://github.com/Dynorixz/dynorixz-smart-home-wear-os/issues/new), укажите модель часов, версию Wear OS, версию Home и шаги воспроизведения. Не прикладывайте токены, пароли и приватные ключи.

@@ -19,6 +19,7 @@ tiles = "1.6.2"
 protolayout = "1.4.2"
 watchface = "1.3.0"
 wearRemote = "1.2.0"
+wearPhone = "1.1.1"
 playWearable = "20.0.1"
 junit = "4.13.2"
 androidxTest = "1.7.0"
@@ -27,6 +28,7 @@ espresso = "3.7.0"
 mockwebserver = "5.5.0"
 turbine = "1.2.1"
 ksp = "2.3.11"
+robolectric = "4.17"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core" }
@@ -62,6 +64,7 @@ androidx-wear-protolayout-material = { module = "androidx.wear.protolayout:proto
 androidx-wear-protolayout-material3 = { module = "androidx.wear.protolayout:protolayout-material3", version.ref = "protolayout" }
 androidx-watchface-complication-ktx = { module = "androidx.wear.watchface:watchface-complications-data-source-ktx", version.ref = "watchface" }
 androidx-wear-remote = { module = "androidx.wear:wear-remote-interactions", version.ref = "wearRemote" }
+androidx-wear-phone = { module = "androidx.wear:wear-phone-interactions", version.ref = "wearPhone" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playWearable" }
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestJunit" }
@@ -73,6 +76,7 @@ mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

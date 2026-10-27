@@ -18,6 +18,7 @@ import com.dynorixz.smarthome.domain.ValueRange
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
@@ -133,14 +134,14 @@ class SmartHomeMapper {
             DeviceProperty.FLOAT -> DeviceProperty.FloatValue(
                 instance = instance,
                 unit = dto.parameters.string("unit"),
-                value = dto.state?.value?.jsonPrimitive?.doubleOrNull,
+                value = (dto.state?.value as? JsonPrimitive)?.doubleOrNull?.takeIf { it.isFinite() },
                 retrievable = dto.retrievable,
                 reportable = dto.reportable,
                 lastUpdatedSeconds = dto.lastUpdated,
             )
             DeviceProperty.EVENT -> DeviceProperty.Event(
                 instance = instance,
-                value = dto.state?.value?.jsonPrimitive?.contentOrNull,
+                value = (dto.state?.value as? JsonPrimitive)?.contentOrNull,
                 events = dto.parameters.arrayStringsOrObjectValues("events", "value"),
                 retrievable = dto.retrievable,
                 reportable = dto.reportable,
@@ -153,9 +154,9 @@ class SmartHomeMapper {
     }
 }
 
-private fun JsonObject.string(key: String): String? = this[key]?.jsonPrimitive?.contentOrNull
-private fun JsonObject.number(key: String): Double? = this[key]?.jsonPrimitive?.doubleOrNull
-private fun JsonObject.boolean(key: String): Boolean? = this[key]?.jsonPrimitive?.contentOrNull?.toBooleanStrictOrNull()
+private fun JsonObject.string(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
+private fun JsonObject.number(key: String): Double? = (this[key] as? JsonPrimitive)?.doubleOrNull?.takeIf { it.isFinite() }
+private fun JsonObject.boolean(key: String): Boolean? = (this[key] as? JsonPrimitive)?.contentOrNull?.toBooleanStrictOrNull()
 
 private fun JsonObject.arrayStringsOrObjectValues(key: String, nestedKey: String): List<String> =
     (this[key] as? JsonArray).orEmpty().mapNotNull { item: JsonElement ->

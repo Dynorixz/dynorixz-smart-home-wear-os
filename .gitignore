@@ -22,3 +22,6 @@ ico/
 scripts/build-production-release.ps1
 Thumbs.db
 .DS_Store
+.codex-remote-attachments/
+/AGENTS.md
+/docs/working-backup-2026-10-19.md

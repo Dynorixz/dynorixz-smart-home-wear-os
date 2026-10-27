@@ -33,8 +33,8 @@ android {
         applicationId = "com.dynorixz.smarthome"
         minSdk = 30
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 9
+        versionName = "1.8.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "YANDEX_CLIENT_ID", "\"$yandexClientId\"")
         buildConfigField("String", "OAUTH_REDIRECT_URI", "\"dynorixzsmarthome://oauth/callback\"")
@@ -75,7 +75,10 @@ android {
 
     packaging.resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
 
-    testOptions { unitTests.isReturnDefaultValues = true }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
+    }
 
 }
 
@@ -112,6 +115,7 @@ dependencies {
     implementation(libs.androidx.wear.protolayout.material3)
     implementation(libs.androidx.watchface.complication.ktx)
     implementation(libs.androidx.wear.remote)
+    implementation(libs.androidx.wear.phone)
     implementation(libs.play.services.wearable)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
@@ -121,6 +125,9 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation("androidx.wear.tiles:tiles-renderer:1.6.2")
     testImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)

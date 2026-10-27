@@ -2,6 +2,7 @@ package com.dynorixz.smarthome
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.core.net.toUri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
@@ -30,8 +31,9 @@ class MainActivity : ComponentActivity() {
                 TokenState.Loading -> LoadingScreen()
                 TokenState.SignedOut -> AuthScreen(hiltViewModel<AuthViewModel>())
                 is TokenState.Authenticated -> DynorixzApp(
-                    initialDeepLink = latestIntent?.data,
+                    initialDeepLink = latestIntent?.data ?: latestIntent?.getStringExtra(EXTRA_TILE_URI)?.toUri(),
                     initialDestination = latestIntent?.getStringExtra(EXTRA_DESTINATION),
+                    initialTileKind = latestIntent?.getStringExtra(EXTRA_TILE_KIND),
                 )
             }
         }
@@ -47,5 +49,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_DESTINATION = "destination"
         const val DESTINATION_TILE_SETTINGS = "tile_settings"
+        const val EXTRA_TILE_KIND = "tile_kind"
+        const val EXTRA_TILE_URI = "tile_uri"
     }
 }

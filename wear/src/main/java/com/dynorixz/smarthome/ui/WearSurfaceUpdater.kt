@@ -8,6 +8,7 @@ import com.dynorixz.smarthome.complication.HomeStatusComplicationService
 import com.dynorixz.smarthome.complication.SmartHomeComplicationService
 import com.dynorixz.smarthome.tile.LightsTileService
 import com.dynorixz.smarthome.tile.SmartHomeTileService
+import com.dynorixz.smarthome.tile.SensorsTileService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,6 +21,7 @@ class WearSurfaceUpdater @Inject constructor(
         val tileUpdater = TileService.getUpdater(context)
         tileUpdater.requestUpdate(SmartHomeTileService::class.java)
         tileUpdater.requestUpdate(LightsTileService::class.java)
+        tileUpdater.requestUpdate(SensorsTileService::class.java)
         listOf(SmartHomeComplicationService::class.java, HomeStatusComplicationService::class.java).forEach { service ->
             ComplicationDataSourceUpdateRequester.create(
                 context,

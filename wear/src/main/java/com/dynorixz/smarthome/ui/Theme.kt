@@ -1,6 +1,7 @@
 package com.dynorixz.smarthome.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.dynorixz.smarthome.data.local.ThemePreference
 import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.LocalContentColor
 import androidx.wear.compose.material3.dynamicColorScheme
 
 @Composable
@@ -33,7 +35,9 @@ fun DynorixzTheme(
         fallback
     }
     MaterialTheme(colorScheme = colors) {
-        Box(Modifier.fillMaxSize().background(colors.background)) { content() }
+        CompositionLocalProvider(LocalContentColor provides colors.onBackground) {
+            Box(Modifier.fillMaxSize().background(colors.background)) { content() }
+        }
     }
 }
 

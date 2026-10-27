@@ -13,13 +13,13 @@ interface YandexSmartHomeApi {
     suspend fun getUserInfo(): JsonObject
 
     @GET("v1.0/devices/{deviceId}")
-    suspend fun getDevice(@Path("deviceId") deviceId: String): DeviceInfoResponse
+    suspend fun getDevice(@Path("deviceId") deviceId: String): JsonObject
 
     @POST("v1.0/devices/actions")
     suspend fun executeDeviceActions(@Body request: DeviceActionsRequest): ActionResponse
 
     @GET("v1.0/groups/{groupId}")
-    suspend fun getGroup(@Path("groupId") groupId: String): GroupInfoResponse
+    suspend fun getGroup(@Path("groupId") groupId: String): JsonObject
 
     @POST("v1.0/groups/{groupId}/actions")
     suspend fun executeGroupActions(

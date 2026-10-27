@@ -8,20 +8,25 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import kotlin.time.TimeSource
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 import retrofit2.HttpException
 
 class BearerTokenInterceptor(private val tokenProvider: TokenProvider) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = tokenProvider.currentAccessToken
-            ?: throw AppException(AppError.Unauthorized())
+        // OkHttp executes this on its worker thread. A complication may start a cold
+        // process before the encrypted store finishes loading; null is not logout yet.
+        val token = runBlocking { tokenProvider.awaitAccessToken() }
+            ?: throw MissingAuthenticationException()
         val request = chain.request().newBuilder()
             .header("Authorization", "Bearer $token")
             .build()
         return chain.proceed(request)
     }
 }
+
+internal class MissingAuthenticationException : IOException("Authentication is required")
 
 class SafeNetworkLoggingInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -44,6 +49,7 @@ class SafeNetworkLoggingInterceptor : Interceptor {
 class ApiErrorMapper(private val json: Json) {
     fun map(throwable: Throwable): AppException {
         if (throwable is AppException) return throwable
+        if (throwable is MissingAuthenticationException) return AppException(AppError.Unauthorized(), throwable)
         if (throwable is SocketTimeoutException) return AppException(AppError.Timeout(), throwable)
         if (throwable is IOException) return AppException(AppError.Network(), throwable)
         if (throwable is HttpException) {

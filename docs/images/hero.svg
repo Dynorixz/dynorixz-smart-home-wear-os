@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Dynorixz Smart Home — дом на запястье</title>
+  <desc id="desc">Клиент умного дома для Wear OS: устройства, свет, сценарии и датчики.</desc>
+  <defs>
+    <radialGradient id="glow"><stop stop-color="#245448" stop-opacity=".8"/><stop offset="1" stop-color="#101719" stop-opacity="0"/></radialGradient>
+    <linearGradient id="face" x2="1" y2="1"><stop stop-color="#203b34"/><stop offset="1" stop-color="#121b1c"/></linearGradient>
+  </defs>
+  <rect width="1200" height="360" rx="28" fill="#0c1113"/>
+  <ellipse cx="995" cy="173" rx="330" ry="290" fill="url(#glow)"/>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="58" y="61" fill="#8bcdbb" font-size="17" font-weight="700" letter-spacing="3">DYNORIXZ SMART HOME</text>
+    <text x="54" y="147" fill="#edf2ef" font-size="63" font-weight="700">Дом. На запястье.</text>
+    <text x="58" y="196" fill="#bdc9c5" font-size="22">Устройства · Свет · Сценарии · Датчики</text>
+    <rect x="58" y="245" width="132" height="41" rx="20.5" fill="#1e3d34"/>
+    <text x="124" y="272" fill="#a9e2ce" font-size="17" text-anchor="middle" font-weight="600">Wear OS 3+</text>
+    <text x="214" y="272" fill="#becac6" font-size="18">Откройте свой дом одним касанием</text>
+  </g>
+  <rect x="914" y="15" width="102" height="330" rx="42" fill="#161f20" stroke="#293a35" stroke-width="2"/>
+  <circle cx="965" cy="180" r="126" fill="#080d0e" stroke="#43584e" stroke-width="2"/>
+  <circle cx="965" cy="180" r="107" fill="url(#face)"/>
+  <path d="M916 177l49-43 49 43v50h-34v-34h-30v34h-34z" fill="none" stroke="#a1ddc7" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="1055" cy="96" r="28" fill="#ffcf88"/>
+  <path d="M1055 80l-9 17h9l-3 15 13-21h-10z" fill="#352a17" stroke-linejoin="round"/>
+  <rect x="795" y="237" width="79" height="67" rx="20" fill="#19372f" stroke="#5b8674"/>
+  <path d="M823 264a12 12 0 1124 0c0 7-7 9-7 17h-10c0-8-7-10-7-17zm8 22h8" fill="none" stroke="#a4dec9" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="1086" cy="258" r="29" fill="#243530" stroke="#4a675b"/>
+  <path d="M1086 242v17m-5-11v13a8 8 0 1010 0v-13a5 5 0 00-10 0" fill="none" stroke="#ffcf88" stroke-width="3" stroke-linecap="round"/>
+</svg>

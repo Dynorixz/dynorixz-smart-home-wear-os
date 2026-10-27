@@ -50,10 +50,9 @@ fun SettingsScreen(nav: NavHostController, viewModel: SettingsViewModel) {
             }
             item {
                 SettingButton("Главный экран", state.settings.homeStyle.displayName()) {
-                    val next = when (state.settings.homeStyle) {
-                        HomeStylePreference.LIST -> HomeStylePreference.DASHBOARD
-                        HomeStylePreference.DASHBOARD -> HomeStylePreference.LIST
-                    }
+                    val next = HomeStylePreference.entries[
+                        (state.settings.homeStyle.ordinal + 1) % HomeStylePreference.entries.size
+                    ]
                     viewModel.setHomeStyle(next)
                 }
             }
@@ -73,6 +72,7 @@ fun SettingsScreen(nav: NavHostController, viewModel: SettingsViewModel) {
                     viewModel.setSyncInterval(next)
                 }
             }
+            item { SettingButton("Плитки часов", "Умный дом · Свет · Датчики") { nav.navigate("tile_settings") } }
             if (state.favorites.isNotEmpty()) {
                 item { Text("Порядок избранного", style = MaterialTheme.typography.titleSmall) }
                 itemsIndexed(state.favorites, key = { _, ref -> "order:${ref.kind}:${ref.id}" }) { index, ref ->
@@ -85,15 +85,7 @@ fun SettingsScreen(nav: NavHostController, viewModel: SettingsViewModel) {
                         }
                     }
                 }
-                item { Text("Плитка «Избранное» · до 3", style = MaterialTheme.typography.titleSmall) }
-                itemsIndexed(state.favorites, key = { _, ref -> "tile:${ref.kind}:${ref.id}" }) { _, ref ->
-                    val selected = ref in state.tileFavorites
-                    SettingButton(ref.name(state.home), if (selected) "На плитке" else "Добавить") {
-                        val next = if (selected) state.tileFavorites - ref else (state.tileFavorites + ref).take(3)
-                        viewModel.setTileFavorites(next)
-                    }
-                }
-                item { Text("Виджет быстрого действия", style = MaterialTheme.typography.titleSmall) }
+                item { Text("Действие по умолчанию", style = MaterialTheme.typography.titleSmall) }
                 itemsIndexed(state.favorites, key = { _, ref -> "comp:${ref.kind}:${ref.id}" }) { _, ref ->
                     val selected = ref == state.complicationFavorite
                     SettingButton(ref.name(state.home), if (selected) "Выбрано" else "Выбрать") {
@@ -101,7 +93,8 @@ fun SettingsScreen(nav: NavHostController, viewModel: SettingsViewModel) {
                     }
                 }
             }
-            item { Text("Плитка «Свет» и виджет «Статус дома» добавляются через настройку часов", style = MaterialTheme.typography.bodySmall) }
+            item { Text("Ярлыки на циферблате: удерживайте циферблат → Изменить → выберите кружок → «Действие дома». Прибор или сценарий выбирается отдельно для каждого кружка.", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.bodySmall) }
+            item { Text("Плитки «Умный дом», «Свет» и «Датчики» добавляются в боковую ленту часов. Содержимое выбирается в разделе «Плитки часов».", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.bodySmall) }
             item {
                 Button(
                     onClick = viewModel::logout,
@@ -124,92 +117,9 @@ fun SettingsScreen(nav: NavHostController, viewModel: SettingsViewModel) {
 }
 
 @Composable
-fun TileSettingsScreen(viewModel: SettingsViewModel) {
+fun TileSettingsScreen(viewModel: SettingsViewModel, initialKind: com.dynorixz.smarthome.data.local.HomeTileKind = com.dynorixz.smarthome.data.local.HomeTileKind.HOME) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val selected = state.tileFavorites
-    Box(Modifier.fillMaxSize()) {
-        ScalingLazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 34.dp, bottom = 28.dp),
-        ) {
-            item { Text("Плитка «Умный дом»", style = MaterialTheme.typography.titleMedium) }
-            item { Text("Выбрано ${selected.size} из 3", style = MaterialTheme.typography.bodySmall) }
-
-            val home = state.home
-            if (home == null) {
-                item { Text("Загрузите устройства в приложении") }
-            } else {
-                if (home.devices.isNotEmpty()) {
-                    item { Text("Устройства", style = MaterialTheme.typography.titleSmall) }
-                    itemsIndexed(home.devices, key = { _, device -> "tile-device:${device.id}" }) { _, device ->
-                        TileChoiceButton(
-                            title = device.name,
-                            ref = FavoriteRef(FavoriteKind.DEVICE, device.id),
-                            selected = selected,
-                            onChange = viewModel::setTileFavorites,
-                        )
-                    }
-                }
-                if (home.groups.isNotEmpty()) {
-                    item { Text("Группы", style = MaterialTheme.typography.titleSmall) }
-                    itemsIndexed(home.groups, key = { _, group -> "tile-group:${group.id}" }) { _, group ->
-                        TileChoiceButton(
-                            title = group.name,
-                            ref = FavoriteRef(FavoriteKind.GROUP, group.id),
-                            selected = selected,
-                            onChange = viewModel::setTileFavorites,
-                        )
-                    }
-                }
-                if (home.scenarios.isNotEmpty()) {
-                    item { Text("Сценарии", style = MaterialTheme.typography.titleSmall) }
-                    itemsIndexed(home.scenarios, key = { _, scenario -> "tile-scenario:${scenario.id}" }) { _, scenario ->
-                        TileChoiceButton(
-                            title = scenario.name,
-                            ref = FavoriteRef(FavoriteKind.SCENARIO, scenario.id),
-                            selected = selected,
-                            onChange = viewModel::setTileFavorites,
-                        )
-                    }
-                }
-            }
-        }
-        TimeText()
-    }
-}
-
-@Composable
-private fun TileChoiceButton(
-    title: String,
-    ref: FavoriteRef,
-    selected: List<FavoriteRef>,
-    onChange: (List<FavoriteRef>) -> Unit,
-) {
-    val isSelected = ref in selected
-    val limitReached = selected.size >= 3
-    Button(
-        onClick = {
-            when {
-                isSelected -> onChange(selected - ref)
-                !limitReached -> onChange(selected + ref)
-            }
-        },
-        modifier = Modifier.fillMaxWidth(),
-        enabled = isSelected || !limitReached,
-        label = { Text(title) },
-        secondaryLabel = {
-            Text(
-                when {
-                    isSelected -> "Добавлено · нажмите, чтобы убрать"
-                    limitReached -> "Лимит: 3 действия"
-                    else -> "Добавить"
-                },
-            )
-        },
-        colors = if (isSelected) ButtonDefaults.buttonColors() else ButtonDefaults.filledTonalButtonColors(),
-    )
+    TileConfigurationScreen(state, initialKind, viewModel::setTileSelection)
 }
 
 @Composable
@@ -232,6 +142,7 @@ private fun ThemePreference.displayName(): String = when (this) {
 private fun HomeStylePreference.displayName(): String = when (this) {
     HomeStylePreference.LIST -> "Список"
     HomeStylePreference.DASHBOARD -> "Панель"
+    HomeStylePreference.GALLERY -> "Галерея · фото устройств"
 }
 
 private fun FavoriteRef.name(home: SmartHome?): String = when (kind) {

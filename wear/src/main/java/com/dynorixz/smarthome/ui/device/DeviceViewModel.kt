@@ -25,6 +25,7 @@ sealed interface DeviceUiState {
         val device: Device,
         val pendingInstance: String? = null,
         val error: String? = null,
+        val refreshing: Boolean = false,
     ) : DeviceUiState
     data class Error(val message: String) : DeviceUiState
 }
@@ -44,15 +45,24 @@ class DeviceViewModel @Inject constructor(
     private val readyCommands = linkedMapOf<String, PendingCommand>()
     private var reconciledDevice: Device? = null
     private var confirmedDevice: Device? = null
+    private var refreshJob: Job? = null
+    private var errorFromRefresh = false
+    private var freshDeviceRevision = 0L
+    private var lastObservedDevice: Device? = null
 
     init {
         viewModelScope.launch {
             repository.observeHome().collect { home ->
                 val current = _state.value as? DeviceUiState.Content
                 home?.devices?.firstOrNull { it.id == deviceId }?.let { device ->
+                    val freshChange = !home.isStale && lastObservedDevice != null && device != lastObservedDevice
+                    lastObservedDevice = device
+                    if (freshChange) freshDeviceRevision++
                     if (!hasPendingCommands()) {
                         confirmedDevice = device
-                        _state.value = DeviceUiState.Content(device)
+                        val clearRefreshError = errorFromRefresh && freshChange
+                        _state.value = current?.copy(device = device, error = if (clearRefreshError) null else current.error) ?: DeviceUiState.Content(device)
+                        if (clearRefreshError) errorFromRefresh = false
                     } else {
                         reconciledDevice = device
                     }
@@ -63,21 +73,34 @@ class DeviceViewModel @Inject constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch {
+        if (refreshJob?.isActive == true) return
+        (_state.value as? DeviceUiState.Content)?.let { _state.value = it.copy(refreshing = true, error = null) }
+        errorFromRefresh = false
+        val revisionAtStart = freshDeviceRevision
+        refreshJob = viewModelScope.launch {
             runSuspendCatching { repository.refreshDevice(deviceId) }
                 .onSuccess {
+                    errorFromRefresh = false
                     confirmedDevice = it
                     if (!hasPendingCommands()) _state.value = DeviceUiState.Content(it)
-                    else reconciledDevice = it
+                    else {
+                        reconciledDevice = it
+                        (_state.value as? DeviceUiState.Content)?.let { content -> _state.value = content.copy(refreshing = false) }
+                    }
                 }
                 .onFailure { error ->
-                    if (_state.value !is DeviceUiState.Content) _state.value = DeviceUiState.Error(error.userMessage())
+                    val content = _state.value as? DeviceUiState.Content
+                    val alreadyUpdated = freshDeviceRevision > revisionAtStart
+                    errorFromRefresh = !alreadyUpdated
+                    _state.value = content?.copy(error = if (alreadyUpdated) null else error.userMessage(), refreshing = false)
+                        ?: DeviceUiState.Error(error.userMessage())
                 }
         }
     }
 
     fun execute(action: CapabilityAction, debounceMillis: Long = 0) {
         val content = _state.value as? DeviceUiState.Content ?: return
+        errorFromRefresh = false
         val original = content.device
         val optimistic = original.copy(
             capabilities = original.capabilities.map {

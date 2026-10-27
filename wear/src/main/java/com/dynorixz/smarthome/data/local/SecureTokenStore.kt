@@ -46,6 +46,7 @@ data class PendingOAuth(
     val codeVerifier: String,
     val deviceId: String,
     val createdAtMillis: Long,
+    val redirectUri: String = "dynorixzsmarthome://oauth/callback",
 )
 
 @Serializable
@@ -62,6 +63,7 @@ sealed interface TokenState {
 
 interface TokenProvider {
     val currentAccessToken: String?
+    suspend fun awaitAccessToken(): String? = currentAccessToken
 }
 
 interface SessionInvalidator {
@@ -89,6 +91,9 @@ class SecureTokenStore @Inject constructor(
         if (_tokenState.value !is TokenState.Loading) return _tokenState.value
         return tokenState.first { it !is TokenState.Loading }
     }
+
+    override suspend fun awaitAccessToken(): String? =
+        (awaitLoaded() as? TokenState.Authenticated)?.token?.accessToken
 
     suspend fun saveToken(token: AuthToken) {
         payload = payload.copy(token = token, pendingOAuth = null)

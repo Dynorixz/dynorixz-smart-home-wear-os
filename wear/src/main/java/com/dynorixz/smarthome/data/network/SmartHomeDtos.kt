@@ -247,6 +247,24 @@ fun JsonObject.toUserInfoResponse(): UserInfoResponse = UserInfoResponse(
     },
 )
 
+/** The detail endpoints contain the same provider-owned fields as user/info. */
+fun JsonObject.toDeviceInfoResponse(): DeviceInfoResponse = DeviceInfoResponse(
+    status = text("status").orEmpty(), requestId = text("request_id"), id = text("id").orEmpty(),
+    name = text("name").orEmpty(), type = text("type").orEmpty(), householdId = text("household_id").orEmpty(),
+    room = text("room"), groups = strings("groups"),
+    capabilities = objects("capabilities").mapNotNull(::capabilityDto),
+    properties = objects("properties").mapNotNull(::propertyDto), state = text("state"), errorCode = text("error_code"),
+)
+
+fun JsonObject.toGroupInfoResponse(): GroupInfoResponse = GroupInfoResponse(
+    status = text("status").orEmpty(), requestId = text("request_id"), id = text("id").orEmpty(),
+    name = text("name").orEmpty(), type = text("type").orEmpty(), householdId = text("household_id").orEmpty(),
+    state = text("state"), devices = objects("devices").mapNotNull {
+        val id = it.text("id")?.takeIf(String::isNotBlank) ?: return@mapNotNull null
+        GroupDeviceInfoDto(id, it.text("name").orEmpty(), it.text("type").orEmpty())
+    }, capabilities = objects("capabilities").mapNotNull(::capabilityDto),
+)
+
 private fun capabilityDto(item: JsonObject): CapabilityDto? {
     val type = item.text("type")?.takeIf(String::isNotBlank) ?: return null
     val parameters = item.objectOrEmpty("parameters")

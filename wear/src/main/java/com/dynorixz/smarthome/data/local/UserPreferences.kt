@@ -1,11 +1,13 @@
 package com.dynorixz.smarthome.data.local
 
 import android.content.Context
+import com.dynorixz.smarthome.complication.ComplicationChoice
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
@@ -19,7 +21,8 @@ private val Context.userPreferences by preferencesDataStore("user_preferences")
 enum class FavoriteKind { DEVICE, GROUP, SCENARIO }
 data class FavoriteRef(val kind: FavoriteKind, val id: String)
 enum class ThemePreference { SYSTEM, LIGHT, DARK }
-enum class HomeStylePreference { LIST, DASHBOARD }
+enum class HomeStylePreference { LIST, DASHBOARD, GALLERY }
+enum class HomeTileKind(val limit: Int) { HOME(3), LIGHTS(3), SENSORS(2) }
 
 data class AppSettings(
     val dynamicColor: Boolean = true,
@@ -38,12 +41,29 @@ class UserPreferences @Inject constructor(@param:ApplicationContext private val 
         order.mapNotNull(values::get) + values.filterKeys { it !in order }.values
     }
 
-    val tileFavorites: Flow<List<FavoriteRef>> = context.userPreferences.data.map { prefs ->
-        prefs[TILE_FAVORITES].orEmpty().mapNotNull(::decodeFavorite).sortedBy(::encodeFavorite)
+    val tileSelections: Flow<Map<HomeTileKind, List<FavoriteRef>>> = context.userPreferences.data.map { prefs ->
+        HomeTileKind.entries.associateWith { kind ->
+            val values = prefs[tileKey(kind)].orEmpty().mapNotNull(::decodeFavorite).associateBy(::encodeFavorite)
+            val order = prefs[tileOrderKey(kind)].orEmpty().split(',').filter(String::isNotBlank)
+            (order.mapNotNull(values::get) + values.filterKeys { it !in order }.toSortedMap().values).take(kind.limit)
+        }
     }
+    val tileFavorites: Flow<List<FavoriteRef>> = tileSelections.map { it[HomeTileKind.HOME].orEmpty() }
 
     val complicationFavorite: Flow<FavoriteRef?> = context.userPreferences.data.map { prefs ->
         prefs[COMPLICATION_FAVORITE]?.let(::decodeFavorite)
+    }
+
+    fun complicationChoice(instanceId: Int): Flow<ComplicationChoice?> = context.userPreferences.data.map { prefs ->
+        prefs[stringPreferencesKey("complication_slot_$instanceId")]?.let(ComplicationChoice::decode)
+            ?: prefs[COMPLICATION_FAVORITE]?.let(::decodeFavorite)?.let(ComplicationChoice::default)
+    }
+
+    suspend fun setComplicationChoice(instanceId: Int, choice: ComplicationChoice) {
+        require(instanceId >= 0)
+        context.userPreferences.edit {
+            it[stringPreferencesKey("complication_slot_$instanceId")] = choice.encode()
+        }
     }
 
     val settings: Flow<AppSettings> = context.userPreferences.data.map { prefs ->
@@ -73,8 +93,12 @@ class UserPreferences @Inject constructor(@param:ApplicationContext private val 
         it[FAVORITE_ORDER] = refs.joinToString(",", transform = ::encodeFavorite)
     }
 
-    suspend fun setTileFavorites(refs: List<FavoriteRef>) = context.userPreferences.edit {
-        it[TILE_FAVORITES] = refs.take(3).mapTo(mutableSetOf(), ::encodeFavorite)
+    suspend fun setTileFavorites(refs: List<FavoriteRef>) = setTileSelection(HomeTileKind.HOME, refs)
+
+    suspend fun setTileSelection(kind: HomeTileKind, refs: List<FavoriteRef>) = context.userPreferences.edit {
+        val selected = refs.distinct().filter { kind == HomeTileKind.HOME || it.kind == FavoriteKind.DEVICE }.take(kind.limit)
+        it[tileKey(kind)] = selected.mapTo(mutableSetOf(), ::encodeFavorite)
+        it[tileOrderKey(kind)] = selected.joinToString(",", transform = ::encodeFavorite)
     }
 
     suspend fun setComplicationFavorite(ref: FavoriteRef?) = context.userPreferences.edit {
@@ -108,7 +132,9 @@ class UserPreferences @Inject constructor(@param:ApplicationContext private val 
 
         private val FAVORITES = stringSetPreferencesKey("favorites")
         private val FAVORITE_ORDER = stringPreferencesKey("favorite_order")
-        private val TILE_FAVORITES = stringSetPreferencesKey("tile_favorites")
+        private fun tileKey(kind: HomeTileKind): Preferences.Key<Set<String>> = stringSetPreferencesKey(
+            if (kind == HomeTileKind.HOME) "tile_favorites" else "tile_${kind.name.lowercase()}_favorites")
+        private fun tileOrderKey(kind: HomeTileKind) = stringPreferencesKey("tile_${kind.name.lowercase()}_order")
         private val COMPLICATION_FAVORITE = stringPreferencesKey("complication_favorite")
         private val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         private val THEME = stringPreferencesKey("theme")
